@@ -1,6 +1,0 @@
-import{a as o,r as t,j as i}from"./app-BZ-bvNnh.js";import{P as s}from"./index-B4HSgBUH.js";/**
- * @license lucide-react v0.475.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const n=[["path",{d:"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4",key:"1uf3rs"}],["polyline",{points:"16 17 21 12 16 7",key:"1gabdz"}],["line",{x1:"21",x2:"9",y1:"12",y2:"12",key:"1uyos4"}]],c=o("LogOut",n);var d=Object.freeze({position:"absolute",border:0,width:1,height:1,padding:0,margin:-1,overflow:"hidden",clip:"rect(0, 0, 0, 0)",whiteSpace:"nowrap",wordWrap:"normal"}),l="VisuallyHidden",a=t.forwardRef((e,r)=>i.jsx(s.span,{...e,ref:r,style:{...d,...e.style}}));a.displayName=l;var u=a;export{c as L,u as R,d as V};
