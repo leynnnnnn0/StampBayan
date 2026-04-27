@@ -18,6 +18,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import AnnouncementModal from "@/components/announcement-modal";
 
 interface Props {
   customersCount: number;
@@ -79,6 +80,8 @@ export default function Index({
       <Head title="Business Dashboard"/>
 
       <div className="space-y-4 md:space-y-6">
+
+        <AnnouncementModal/>
         {/* Summary boxes - stack on mobile, 3 columns on desktop */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
           <SummaryBox 
