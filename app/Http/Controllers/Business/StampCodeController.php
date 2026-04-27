@@ -109,17 +109,15 @@ class StampCodeController extends Controller
                         ->where('perk_id', $perk->id)
                         ->first();
 
-                    if (!$existingClaim) {
-                        PerkClaim::create([
-                            'customer_id' => $customerId,
-                            'loyalty_card_id' => $stampCode->loyalty_card_id,
-                            'perk_id' => $perk->id,
-                            'stamps_at_claim' => $totalStamps,
-                            'is_redeemed' => false,
-                        ]);
+                    PerkClaim::create([
+                        'customer_id' => $customerId,
+                        'loyalty_card_id' => $stampCode->loyalty_card_id,
+                        'perk_id' => $perk->id,
+                        'stamps_at_claim' => $totalStamps,
+                        'is_redeemed' => false,
+                    ]);
 
-                        $newlyUnlockedPerks[] = $perk->reward;
-                    }
+                    $newlyUnlockedPerks[] = $perk->reward;
                 }
 
                 // Check if card is complete

@@ -1147,7 +1147,12 @@ export default function Welcome() {
                                 Digital Loyalty for Filipino Businesses.
                             </p>
                             <div className="flex gap-4">
-                                <Facebook className="h-5 w-5 cursor-pointer transition hover:text-white" />
+                                <a
+                                    href="https://www.facebook.com/profile.php?id=61584319949414"
+                                    target="_blank"
+                                >
+                                    <Facebook className="h-5 w-5 cursor-pointer transition hover:text-white" />
+                                </a>
                                 <Instagram className="h-5 w-5 cursor-pointer transition hover:text-white" />
                             </div>
                         </div>
