@@ -90,7 +90,7 @@ export default function Show({ customer }: Props) {
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Total Stamps</p>
-                                    <p className="text-base font-semibold">{customer.stamp_codes.length}</p>
+                                    <p className="text-base font-semibold">{customer.stamp_codes.reduce((total, stampCode) => total + stampCode.number_of_stamps, 0)}</p>
                                 </div>
                             </div>
                         </div>
@@ -132,6 +132,9 @@ export default function Show({ customer }: Props) {
                                                 </div>
                                                 <p className="text-sm text-muted-foreground font-mono">
                                                     Code: {stampCode.code}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Number of Stamps: {stampCode.number_of_stamps}
                                                 </p>
                                                 {stampCode.used_at && (
                                                     <p className="text-xs text-muted-foreground">

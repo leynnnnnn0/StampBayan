@@ -129,7 +129,7 @@ export default function Index({ stampCodes, filters }: Props) {
                 className="bg-white border rounded-lg p-4 shadow-sm"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className="font-mono font-medium text-sm break-all pr-2">
+                  <div className="font-mono font-medium text-xs break-all pr-2">
                     {stampCode.loyalty_card.name} | {stampCode.code}
                   </div>
                   {getStatusBadge(stampCode)}
@@ -153,12 +153,19 @@ export default function Index({ stampCodes, filters }: Props) {
                   </div>
 
                   <div>
-                    <span className="text-gray-500 font-medium">Used At: </span>
-                    <span className="text-gray-700">{formatDate(stampCode.used_at)}</span>
+                    <span className="text-gray-500 font-medium text-xs">Number of Stamps: </span>
+                    <span className="text-gray-700">{stampCode.number_of_stamps}</span>
                   </div>
 
                   <div>
-                    <span className="text-gray-500 font-medium">Created: </span>
+                    <span className="text-gray-500 font-medium text-xs">Used At: </span>
+                    <span className="text-gray-700">{formatDate(stampCode.used_at)}</span>
+                  </div>
+
+
+
+                  <div>
+                    <span className="text-gray-500 font-medium text-xs">Created: </span>
                     <span className="text-gray-700">{formatDate(stampCode.created_at)}</span>
                   </div>
                 </div>
@@ -178,6 +185,7 @@ export default function Index({ stampCodes, filters }: Props) {
               <TableRow>
                 <TableHead>Loyalty Card</TableHead>
                 <TableHead>Code</TableHead>
+                <TableHead>Number of Stamps</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Used At</TableHead>
@@ -191,6 +199,9 @@ export default function Index({ stampCodes, filters }: Props) {
                     <TableCell>{stampCode.loyalty_card.name}</TableCell>
                     <TableCell className="font-mono font-medium">
                       {stampCode.code}
+                    </TableCell>
+                    <TableCell>
+                      {stampCode.number_of_stamps}
                     </TableCell>
                     <TableCell>
                       {stampCode.customer ? (

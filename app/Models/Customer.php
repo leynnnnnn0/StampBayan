@@ -71,7 +71,7 @@ class Customer extends Model implements AuthenticatableContract, AuthorizableCon
 
     public function stamp_codes()
     {
-        return $this->hasMany(StampCode::class);
+        return $this->hasMany(StampCode::class)->withTrashed();
     }
 
     public function business()

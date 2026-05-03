@@ -17,6 +17,7 @@ class StampCode extends Model
         'used_at',
         'is_expired',
         'is_offline_code',
+        'number_of_stamps',
     ];
 
     public function business()
@@ -38,4 +39,5 @@ class StampCode extends Model
     {
         return $this->hasOne(CompletedLoyaltyCard::class);
     }
+
 }

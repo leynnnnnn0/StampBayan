@@ -21,14 +21,14 @@ class IssueStampController extends Controller
             ->get();
 
         // Generate code if loyalty_card_id is provided
-        if ($request->has('loyalty_card_id')) {
+        if ($request->has('loyalty_card_id') && $request->has('number_of_stamps') && $request->input('number_of_stamps') > 0) {
             $loyaltyCardId = $request->input('loyalty_card_id');
 
             // Validate that the card belongs to this business
             $cardExists = $cards->contains('id', $loyaltyCardId);
 
             if ($cardExists) {
-                $code = $this->generate($loyaltyCardId);
+                $code = $this->generate($loyaltyCardId, $request->input('number_of_stamps'));
             } else {
                 $code = [
                     'success' => false,
@@ -45,8 +45,7 @@ class IssueStampController extends Controller
                 'created_at' => ''
             ];
         }
-
-
+      
 
         return Inertia::render('Business/IssueStamp/Index', [
             'code' => $code,
@@ -55,7 +54,7 @@ class IssueStampController extends Controller
         ]);
     }
 
-    private function generate($loyaltyCardId)
+    private function generate($loyaltyCardId, $numberOfStamps)
     {
         // Expire old unused codes
         StampCode::whereNull('used_at')
@@ -78,14 +77,18 @@ class IssueStampController extends Controller
             'loyalty_card_id' => $loyaltyCardId,
             'code' => $code,
             'used_at' => null,
-            'is_expired' => false
+            'is_expired' => false,
+            'number_of_stamps' => $numberOfStamps,
         ]);
+
+
 
         return [
             'success' => true,
             'code' => $stampCode->code,
             'qr_url' => "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={$stampCode->code}",
-            'created_at' => $stampCode->created_at->format('M d, Y h:i A')
+            'created_at' => $stampCode->created_at->format('M d, Y h:i A'),
+            'number_of_stamps' => $stampCode->number_of_stamps,
         ];
     }
 

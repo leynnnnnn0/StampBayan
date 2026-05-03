@@ -18,7 +18,7 @@ class StampCodeController extends Controller
     {
         $search = $request->input('search');
 
-        $stampCodes = StampCode::with('loyalty_card')->where('business_id', Auth::user()->business->id)
+        $stampCodes = StampCode::withTrashed()->with('loyalty_card')->where('business_id', Auth::user()->business->id)
             ->with('customer:id,username,email')
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -32,8 +32,6 @@ class StampCodeController extends Controller
             ->latest()
             ->paginate(10)
             ->withQueryString();
-
-            //
 
         return Inertia::render('Business/StampCode/Index', [
             'stampCodes' => $stampCodes,
@@ -58,7 +56,7 @@ class StampCodeController extends Controller
                         $fail('This stamp code has expired.');
                     } elseif ($stampCode->used_at !== null) {
                         $fail('This stamp code has already been used.');
-                    }elseif($stampCode->business_id != Auth::guard('customer')->user()->business_id){
+                    } elseif ($stampCode->business_id != Auth::guard('customer')->user()->business_id) {
                         $fail('This stamp code does not belong to this business');
                     }
                 },
@@ -66,21 +64,16 @@ class StampCodeController extends Controller
             'loyalty_card_id' => 'required|exists:loyalty_cards,id'
         ]);
 
-
-
         $stampCode = StampCode::where('code', $validated['code'])
             ->whereNull('used_at')
             ->where('is_expired', false)
             ->first();
-
-          
 
         if (!$stampCode) {
             return response()->json(['success' => false, 'message' => 'Invalid or expired stamp code.'], 400);
         }
 
         $customerId = Auth::guard('customer')->user()->id;
-        $loyaltyCardId = $validated['loyalty_card_id'];
 
         try {
             return DB::transaction(function () use ($stampCode, $customerId) {
@@ -90,85 +83,120 @@ class StampCodeController extends Controller
                     'used_at' => now(),
                 ]);
 
-                // Count total stamps for this customer on this loyalty card
-                $totalStamps = StampCode::where('customer_id', $customerId)
-                    ->where('loyalty_card_id', $stampCode->loyalty_card_id)
-                    ->whereNotNull('used_at')
-                    ->count();
-
-                // Get the loyalty card
                 $loyaltyCard = LoyaltyCard::with('perks')->find($stampCode->loyalty_card_id);
 
-                // Check for newly unlocked perks
+                // Total stamps BEFORE this batch
+                $previousTotal = StampCode::where('customer_id', $customerId)
+                    ->where('loyalty_card_id', $stampCode->loyalty_card_id)
+                    ->whereNotNull('used_at')
+                    ->sum('number_of_stamps') - $stampCode->number_of_stamps;
+
+                $newTotal = $previousTotal + $stampCode->number_of_stamps;
+
+                // Calculate perks across all cycles spanned
                 $newlyUnlockedPerks = [];
-                $perksToUnlock = $loyaltyCard->perks->where('stampNumber', $totalStamps);
+                foreach ($loyaltyCard->perks as $perk) {
+                    $stampNumber = (int) $perk->stampNumber;
+                    $stampsNeeded = $loyaltyCard->stampsNeeded;
 
-                foreach ($perksToUnlock as $perk) {
-                    // Check if perk hasn't been claimed yet
-                    $existingClaim = PerkClaim::where('customer_id', $customerId)
-                        ->where('perk_id', $perk->id)
-                        ->first();
+                    $timesUnlocked = 0;
+                    $checkpoint = $previousTotal - ($previousTotal % $stampsNeeded) + $stampNumber;
 
-                    PerkClaim::create([
-                        'customer_id' => $customerId,
-                        'loyalty_card_id' => $stampCode->loyalty_card_id,
-                        'perk_id' => $perk->id,
-                        'stamps_at_claim' => $totalStamps,
-                        'is_redeemed' => false,
-                    ]);
+                    while ($checkpoint <= $newTotal) {
+                        if ($checkpoint > $previousTotal) {
+                            $timesUnlocked++;
+                        }
+                        $checkpoint += $stampsNeeded;
+                    }
 
-                    $newlyUnlockedPerks[] = $perk->reward;
+                    for ($i = 0; $i < $timesUnlocked; $i++) {
+                        PerkClaim::create([
+                            'customer_id' => $customerId,
+                            'loyalty_card_id' => $stampCode->loyalty_card_id,
+                            'perk_id' => $perk->id,
+                            'stamps_at_claim' => $newTotal,
+                            'is_redeemed' => false,
+                        ]);
+                        $newlyUnlockedPerks[] = $perk->reward;
+                    }
                 }
 
-                // Check if card is complete
-                if ($totalStamps >= $loyaltyCard->stampsNeeded) {
-                    // Get all stamps for this completion
+                $cyclesCompleted = 0;
+
+
+                // Loop to handle multiple completions
+                while ($newTotal >= $loyaltyCard->stampsNeeded) {
+                    $excessStamps = $newTotal - $loyaltyCard->stampsNeeded;
+
                     $usedStamps = StampCode::where('customer_id', $customerId)
                         ->where('loyalty_card_id', $stampCode->loyalty_card_id)
                         ->whereNotNull('used_at')
+                        ->orderBy('used_at', 'asc')
                         ->get();
 
-                    // Count previous completions
+                    $stampsData = $usedStamps->map(fn($stamp) => [
+                        'id' => $stamp->id,
+                        'code' => $stamp->code,
+                        'used_at' => $stamp->used_at,
+                    ])->toArray();
+
                     $previousCompletions = CompletedLoyaltyCard::where('customer_id', $customerId)
                         ->where('loyalty_card_id', $stampCode->loyalty_card_id)
                         ->count();
 
-                    // Create stamps data array
-                    $stampsData = $usedStamps->map(function ($stamp) {
-                        return [
-                            'id' => $stamp->id,
-                            'code' => $stamp->code,
-                            'used_at' => $stamp->used_at,
-                        ];
-                    })->toArray();
-
-                    // Create completion record
                     CompletedLoyaltyCard::create([
                         'customer_id' => $customerId,
                         'loyalty_card_id' => $stampCode->loyalty_card_id,
-                        'stamps_collected' => $totalStamps,
+                        'stamps_collected' => $loyaltyCard->stampsNeeded,
                         'completed_at' => now(),
                         'card_cycle' => $previousCompletions + 1,
                         'stamps_data' => json_encode($stampsData),
                     ]);
 
-                    // Delete used stamps
+                    // Delete all used stamps for this cycle
                     StampCode::where('customer_id', $customerId)
                         ->where('loyalty_card_id', $stampCode->loyalty_card_id)
                         ->whereNotNull('used_at')
                         ->delete();
 
-                    $message = 'Congratulations! You completed your loyalty card!';
+                    // Carry over excess stamps to next cycle
+                    if ($excessStamps > 0) {
+                        StampCode::create([
+                            'user_id' => $stampCode->user_id,
+                            'business_id' => $stampCode->business_id,
+                            'customer_id' => $customerId,
+                            'loyalty_card_id' => $stampCode->loyalty_card_id,
+                            'code' => 'CARRY-' . uniqid(),
+                            'used_at' => now(),
+                            'is_expired' => false,
+                            'is_offline_code' => false,
+                            'number_of_stamps' => $excessStamps,
+                        ]);
+                    }
+
+                    $cyclesCompleted++;
+                    $newTotal = $excessStamps;
+                }
+
+                if ($cyclesCompleted > 0) {
+                    $message = $cyclesCompleted > 1
+                        ? "Congratulations! You completed your loyalty card {$cyclesCompleted} times!"
+                        : 'Congratulations! You completed your loyalty card!';
+
                     if (!empty($newlyUnlockedPerks)) {
                         $message .= ' New rewards unlocked: ' . implode(', ', $newlyUnlockedPerks);
                     }
+
+                    $totalCompletions = CompletedLoyaltyCard::where('customer_id', $customerId)
+                        ->where('loyalty_card_id', $stampCode->loyalty_card_id)
+                        ->count();
 
                     return back()->with([
                         'success' => true,
                         'active_card_id' => $stampCode->loyalty_card_id,
                         'card_completed' => true,
                         'message' => $message,
-                        'cycle_number' => $previousCompletions + 1,
+                        'cycle_number' => $totalCompletions,
                         'newly_unlocked_perks' => $newlyUnlockedPerks
                     ]);
                 }
@@ -183,7 +211,7 @@ class StampCodeController extends Controller
                     'active_card_id' => $stampCode->loyalty_card_id,
                     'card_completed' => false,
                     'message' => $message,
-                    'stamps_remaining' => $loyaltyCard->stampsNeeded - $totalStamps,
+                    'stamps_remaining' => $loyaltyCard->stampsNeeded - $newTotal,
                     'newly_unlocked_perks' => $newlyUnlockedPerks
                 ]);
             });
