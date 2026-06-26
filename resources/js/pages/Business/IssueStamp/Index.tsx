@@ -1,6 +1,6 @@
 import AppLayout from "@/layouts/app-layout";
 import { Head, router } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -9,6 +9,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { BrowserQRCodeReader } from "@zxing/browser";
+import { toast } from "sonner";
 
 interface LoyaltyCard {
   id: number;
@@ -27,9 +37,15 @@ interface Props {
   loyalty_card_id?: string;
 }
 
+type ScanControls = {
+  stop: () => void;
+};
+
 export default function Index({ code, cards, loyalty_card_id }: Props) {
   const [loading, setLoading] = useState(false);
   const [downloadingOffline, setDownloadingOffline] = useState(false);
+  const [scanCustomerOpen, setScanCustomerOpen] = useState(false);
+  const [scanningCustomer, setScanningCustomer] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string>(
      loyalty_card_id ? loyalty_card_id.toString() : cards.length > 0 ? cards[0].id.toString() : ""
   );
@@ -37,6 +53,8 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
   const [numberOfStampsError, setNumberOfStampsError] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+  const scanVideoRef = useRef<HTMLVideoElement>(null);
+  const scanControlsRef = useRef<ScanControls | null>(null);
 
   const generateCode = () => {
     if (!selectedCardId) {
@@ -123,9 +141,161 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
     }
   };
 
+  const stopCustomerScanner = () => {
+    if (scanControlsRef.current) {
+      try {
+        scanControlsRef.current.stop();
+      } catch {
+        scanControlsRef.current = null;
+      }
+      scanControlsRef.current = null;
+    }
+
+    if (scanVideoRef.current?.srcObject) {
+      const stream = scanVideoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      scanVideoRef.current.srcObject = null;
+    }
+
+    setScanningCustomer(false);
+    setScanCustomerOpen(false);
+  };
+
+  const scanCustomerQr = async () => {
+    if (!selectedCardId) {
+      setError("Please select a loyalty card");
+      return;
+    }
+
+    if (numberOfStamps < 1) {
+      setNumberOfStampsError("Please enter a valid number of stamps");
+      return;
+    }
+
+    setError(null);
+    setNumberOfStampsError(null);
+    setScanCustomerOpen(true);
+    setScanningCustomer(true);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    try {
+      const codeReader = new BrowserQRCodeReader();
+      if (!scanVideoRef.current) throw new Error("Video element not ready");
+
+      const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
+      if (videoInputDevices.length === 0) throw new Error("No camera devices found");
+
+      const backCamera = videoInputDevices.find(
+        (device) =>
+          device.label.toLowerCase().includes("back") ||
+          device.label.toLowerCase().includes("rear") ||
+          device.label.toLowerCase().includes("environment"),
+      );
+      const selectedDeviceId =
+        backCamera?.deviceId || videoInputDevices[videoInputDevices.length - 1]?.deviceId;
+
+      const controls = await codeReader.decodeFromVideoDevice(
+        selectedDeviceId,
+        scanVideoRef.current,
+        (result, error, controls) => {
+          scanControlsRef.current = controls;
+          if (!result) return;
+
+          router.post(
+            "/business/issue-stamp/scan-customer",
+            {
+              customer_qr: result.getText(),
+              loyalty_card_id: selectedCardId,
+              number_of_stamps: numberOfStamps,
+            },
+            {
+              preserveScroll: true,
+              onSuccess: () => {
+                toast.success("Stamp issued successfully.");
+                stopCustomerScanner();
+              },
+              onError: (errors) => {
+                toast.error(
+                  errors.customer_qr ||
+                    errors.loyalty_card_id ||
+                    errors.number_of_stamps ||
+                    "Failed to issue stamp. Please try again.",
+                );
+                stopCustomerScanner();
+              },
+              onFinish: stopCustomerScanner,
+            },
+          );
+        },
+      );
+
+      scanControlsRef.current = controls;
+    } catch (err) {
+      const errorName = err instanceof Error ? err.name : "";
+      if (errorName === "NotAllowedError") toast.error("Camera permission denied.");
+      else if (errorName === "NotFoundError") toast.error("No camera found.");
+      else if (errorName === "NotReadableError") toast.error("Camera is already in use.");
+      else toast.error("Failed to access camera.");
+      stopCustomerScanner();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCustomerScanner();
+    };
+  }, []);
+
   return (
       <AppLayout>
           <Head title="Issue Stamp" />
+          <Dialog
+              open={scanCustomerOpen}
+              onOpenChange={(open) => {
+                  if (!open) stopCustomerScanner();
+              }}
+          >
+              <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                      <DialogTitle>Scan Customer QR</DialogTitle>
+                      <DialogDescription>
+                          Ask the customer to show their personal QR from their
+                          dashboard.
+                      </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                      <div className="relative aspect-square overflow-hidden rounded-2xl bg-black">
+                          <video
+                              ref={scanVideoRef}
+                              autoPlay
+                              playsInline
+                              muted
+                              className="h-full w-full object-cover"
+                          />
+                          {scanningCustomer && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="relative h-56 w-56">
+                                      <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-t-4 border-l-4 border-green-400" />
+                                      <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-t-4 border-r-4 border-green-400" />
+                                      <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-4 border-l-4 border-green-400" />
+                                      <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-r-4 border-b-4 border-green-400" />
+                                  </div>
+                                  <div className="absolute right-0 bottom-5 left-0 text-center">
+                                      <p className="inline-block rounded-full bg-black/60 px-4 py-2 text-xs text-white backdrop-blur">
+                                          Scanning customer QR...
+                                      </p>
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+                  <div className="flex justify-end">
+                      <Button variant="outline" onClick={stopCustomerScanner}>
+                          Cancel
+                      </Button>
+                  </div>
+              </DialogContent>
+          </Dialog>
           <div className="mx-auto w-full max-w-2xl sm:mt-6 sm:px-6 md:mt-8 lg:px-8">
               {!code.success ? (
                   <div className="rounded-lg bg-white p-6 shadow sm:p-8">
@@ -230,6 +400,14 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
                               className="w-full rounded-lg bg-accent px-6 py-3 font-medium text-white transition-colors hover:bg-accent/70 disabled:cursor-not-allowed disabled:bg-accent/60"
                           >
                               {loading ? 'Generating...' : 'Generate Code'}
+                          </button>
+
+                          <button
+                              onClick={scanCustomerQr}
+                              disabled={cards.length === 0}
+                              className="w-full rounded-lg border border-accent px-6 py-3 font-medium text-accent transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:border-accent/50 disabled:text-accent/50"
+                          >
+                              Scan Customer QR
                           </button>
 
                           <div className="relative">
@@ -461,6 +639,14 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
                               className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent/70 sm:px-6 sm:py-3 sm:text-base"
                           >
                               Generate New Code
+                          </button>
+
+                          <button
+                              onClick={scanCustomerQr}
+                              disabled={cards.length === 0}
+                              className="w-full rounded-lg border border-accent px-4 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:border-accent/50 disabled:text-accent/50 sm:px-6 sm:py-3 sm:text-base"
+                          >
+                              Scan Customer QR
                           </button>
 
                           <button

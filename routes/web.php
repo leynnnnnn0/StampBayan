@@ -62,6 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/qr-studio/update', [QRStudioController::class, 'update']);
         Route::resource('/customers', CustomerController::class);
         Route::get('/issue-stamp', [IssueStampController::class, 'index']);
+        Route::post('/issue-stamp/scan-customer', [StampCodeController::class, 'recordCustomerScan']);
         Route::get('/stamp-codes', [StampCodeController::class, 'index']);
 
 

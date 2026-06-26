@@ -60,8 +60,16 @@ class DashboardController extends Controller
             'completedCards' => $completedCards,
             'customerName' => $this->greetingByTime() . ', ' . strtoupper($customer->username),
             'perkClaims' => $perkClaims,
-            'customer' => $customer
+            'customer' => $customer,
+            'customerQrPayload' => $this->customerQrPayload($customer->id, $customer->business_id),
         ]);
+    }
+
+    private function customerQrPayload(int $customerId, int $businessId): string
+    {
+        $signature = substr(hash_hmac('sha256', "{$customerId}|{$businessId}", config('app.key')), 0, 24);
+
+        return "stampbayan:customer:{$customerId}:{$businessId}:{$signature}";
     }
 
     function greetingByTime()

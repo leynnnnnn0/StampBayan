@@ -128,8 +128,11 @@ interface Props {
     active_card_id?: number;
     perkClaims: PerkClaim[];
     customer: {
+        id: number;
+        business_id: number;
         username: string;
     };
+    customerQrPayload: string;
 }
 
 interface CustomerFlash {
@@ -157,6 +160,7 @@ export default function Index({
     customerName,
     perkClaims,
     customer,
+    customerQrPayload,
 }: Props) {
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [activeTab, setActiveTab] = useState('home');
@@ -759,6 +763,7 @@ export default function Index({
     const backgroundImageUrl = currentCard?.backgroundImage
         ? `/${currentCard.backgroundImage}`
         : null;
+    const customerQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(customerQrPayload)}`;
 
     const profileDialog = (
         <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
@@ -1187,6 +1192,18 @@ export default function Index({
                                             <p className="text-center text-[10px] leading-relaxed text-gray-800">
                                                 {currentCard.mechanics}
                                             </p>
+                                        </div>
+                                        <div className="mb-3 flex justify-center">
+                                            <div className="rounded-xl bg-white p-2 text-center shadow-lg">
+                                                <img
+                                                    src={customerQrUrl}
+                                                    alt="Personal customer QR code"
+                                                    className="h-28 w-28"
+                                                />
+                                                <p className="mt-1 text-[9px] font-semibold text-gray-700">
+                                                    scan here
+                                                </p>
+                                            </div>
                                         </div>
                                         <div
                                             className="border-t pt-2"
