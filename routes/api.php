@@ -9,8 +9,8 @@ Route::get('/user', function (Request $request) {
     
 })->middleware('auth:sanctum');
 
-// Route::controller(App\Http\Controllers\Api\DashboardController::class)->group(function () {
-//     Route::get('/dashboard', 'index');
-//     Route::get('/businesses', 'getBusinesses');
-//     Route::get('/business/{id}', 'getBusiness');
-// });
+Route::controller(App\Http\Controllers\Api\DashboardController::class)->group(function () {
+    Route::get('/dashboard', 'index');
+    Route::get('/businesses', 'getBusinesses');
+    Route::get('/business/{id}', 'getBusiness');
+});
