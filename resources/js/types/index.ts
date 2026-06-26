@@ -52,7 +52,15 @@ export interface User {
     [key: string]: unknown;
 }
 
-export type StampShapeName = 'circle' | 'star' | 'square' | 'hexagon';
+export type StampShapeName =
+    | 'circle'
+    | 'star'
+    | 'square'
+    | 'hexagon'
+    | 'heart'
+    | 'diamond'
+    | 'triangle'
+    | 'oval';
 
 export interface CardTemplatePerk {
     stampNumber: number;

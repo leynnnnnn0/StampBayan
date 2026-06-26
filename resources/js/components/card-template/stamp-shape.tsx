@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react';
+import { useId } from 'react';
 
 import type { StampShapeName } from '@/types';
 
@@ -50,15 +51,33 @@ export default function StampShape({
     const fillColor = isFilled ? (filledColor || color) : emptyColor;
     const strokeColor = isFilled ? '#FFFFFF' : '#D1D5DB';
     const imageUrl = assetUrl(stampImage);
-    const fill = imageUrl && isFilled ? `url(#${patternId})` : fillColor;
-    const normalizedShape = ['circle', 'star', 'square', 'hexagon'].includes(shape)
+    const autoPatternId = `stamp-pattern-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+    const resolvedPatternId = patternId === 'stampPattern' ? autoPatternId : patternId;
+    const fill = imageUrl && isFilled ? `url(#${resolvedPatternId})` : fillColor;
+    const normalizedShape = [
+        'circle',
+        'star',
+        'square',
+        'hexagon',
+        'heart',
+        'diamond',
+        'triangle',
+        'oval',
+    ].includes(shape)
         ? shape
         : 'circle';
 
     const defs = (
         <defs>
             {imageUrl && (
-                <pattern id={patternId} x="0" y="0" width="1" height="1">
+                <pattern
+                    id={resolvedPatternId}
+                    x="0"
+                    y="0"
+                    width="100"
+                    height="100"
+                    patternUnits="userSpaceOnUse"
+                >
                     <image
                         href={imageUrl}
                         x="0"
@@ -105,6 +124,48 @@ export default function StampShape({
                     stroke={strokeColor}
                     strokeWidth="3"
                 />
+            </svg>
+        ),
+        heart: (
+            <svg width="100%" height="100%" viewBox="0 0 100 100" className={className}>
+                {defs}
+                <path
+                    d="M50 88 C24 66 12 51 12 34 C12 20 22 10 36 10 C44 10 50 15 50 22 C50 15 56 10 64 10 C78 10 88 20 88 34 C88 51 76 66 50 88 Z"
+                    fill={fill}
+                    stroke={strokeColor}
+                    strokeWidth="3"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        ),
+        diamond: (
+            <svg width="100%" height="100%" viewBox="0 0 100 100" className={className}>
+                {defs}
+                <path
+                    d="M50 6 L94 50 L50 94 L6 50 Z"
+                    fill={fill}
+                    stroke={strokeColor}
+                    strokeWidth="3"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        ),
+        triangle: (
+            <svg width="100%" height="100%" viewBox="0 0 100 100" className={className}>
+                {defs}
+                <path
+                    d="M50 8 L92 88 L8 88 Z"
+                    fill={fill}
+                    stroke={strokeColor}
+                    strokeWidth="3"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        ),
+        oval: (
+            <svg width="100%" height="100%" viewBox="0 0 100 100" className={className}>
+                {defs}
+                <ellipse cx="50" cy="50" rx="43" ry="32" fill={fill} stroke={strokeColor} strokeWidth="3" />
             </svg>
         ),
     };

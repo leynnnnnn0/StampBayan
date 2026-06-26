@@ -71,7 +71,15 @@ interface LoyaltyCard {
     stampImage: string | null;
     backgroundImage: string | null;
     footer: string;
-    stampShape: 'circle' | 'star' | 'square' | 'hexagon';
+    stampShape:
+        | 'circle'
+        | 'star'
+        | 'square'
+        | 'hexagon'
+        | 'heart'
+        | 'diamond'
+        | 'triangle'
+        | 'oval';
     perks: Perk[];
 }
 
@@ -734,56 +742,67 @@ export default function Index({
         isReward,
         rewardText,
         color,
+        filledColor,
+        emptyColor,
         stampImage,
+        patternId,
     }: {
         shape: string;
         isFilled: boolean;
         isReward: boolean;
         rewardText?: string;
         color: string;
+        filledColor?: string;
+        emptyColor?: string;
         stampImage?: string | null;
+        patternId?: string;
     }) => {
         const fillColor = isFilled
-            ? currentCard.stampFilledColor || color
-            : currentCard.stampEmptyColor;
+            ? filledColor || color
+            : emptyColor || '#E5E7EB';
         const strokeColor = isFilled ? '#FFFFFF' : '#D1D5DB';
-        let stampImageUrl = currentCard.stampImage
-            ? `/${currentCard.stampImage}`
-            : null;
+        const autoPatternId = `customer-stamp-pattern-${React.useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+        const resolvedPatternId = patternId || autoPatternId;
+        let stampImageUrl = null;
         if (stampImage) stampImageUrl = `/${stampImage}`;
+        if (stampImage?.startsWith('data:') || stampImage?.startsWith('http') || stampImage?.startsWith('/')) {
+            stampImageUrl = stampImage;
+        }
+        const fill = stampImageUrl && isFilled ? `url(#${resolvedPatternId})` : fillColor;
+
+        const defs = (
+            <defs>
+                {stampImageUrl && (
+                    <pattern
+                        id={resolvedPatternId}
+                        x="0"
+                        y="0"
+                        width="100"
+                        height="100"
+                        patternUnits="userSpaceOnUse"
+                    >
+                        <image
+                            href={stampImageUrl}
+                            x="0"
+                            y="0"
+                            width="100"
+                            height="100"
+                            preserveAspectRatio="xMidYMid slice"
+                        />
+                    </pattern>
+                )}
+            </defs>
+        );
 
         const shapes: Record<string, React.ReactElement> = {
             circle: (
                 <svg width="100%" height="100%" viewBox="0 0 100 100">
-                    <defs>
-                        {stampImageUrl && (
-                            <pattern
-                                id="stampPattern"
-                                x="0"
-                                y="0"
-                                width="1"
-                                height="1"
-                            >
-                                <image
-                                    href={stampImageUrl}
-                                    x="0"
-                                    y="0"
-                                    width="100"
-                                    height="100"
-                                    preserveAspectRatio="xMidYMid slice"
-                                />
-                            </pattern>
-                        )}
-                    </defs>
+                    {defs}
                     <circle
                         cx="50"
                         cy="50"
                         r="45"
-                        fill={
-                            stampImageUrl && isFilled
-                                ? 'url(#stampPattern)'
-                                : fillColor
-                        }
+                        fill={fill}
                         stroke={strokeColor}
                         strokeWidth="2"
                     />
@@ -791,33 +810,10 @@ export default function Index({
             ),
             star: (
                 <svg width="100%" height="100%" viewBox="0 0 100 100">
-                    <defs>
-                        {stampImageUrl && (
-                            <pattern
-                                id="stampPattern"
-                                x="0"
-                                y="0"
-                                width="1"
-                                height="1"
-                            >
-                                <image
-                                    href={stampImageUrl}
-                                    x="0"
-                                    y="0"
-                                    width="100"
-                                    height="100"
-                                    preserveAspectRatio="xMidYMid slice"
-                                />
-                            </pattern>
-                        )}
-                    </defs>
+                    {defs}
                     <path
                         d="M50 5 L55 20 L70 15 L70 30 L85 35 L75 47 L85 59 L70 64 L70 79 L55 74 L50 89 L45 74 L30 79 L30 64 L15 59 L25 47 L15 35 L30 30 L30 15 L45 20 Z"
-                        fill={
-                            stampImageUrl && isFilled
-                                ? 'url(#stampPattern)'
-                                : fillColor
-                        }
+                        fill={fill}
                         stroke={strokeColor}
                         strokeWidth="2"
                     />
@@ -825,37 +821,14 @@ export default function Index({
             ),
             square: (
                 <svg width="100%" height="100%" viewBox="0 0 100 100">
-                    <defs>
-                        {stampImageUrl && (
-                            <pattern
-                                id="stampPattern"
-                                x="0"
-                                y="0"
-                                width="1"
-                                height="1"
-                            >
-                                <image
-                                    href={stampImageUrl}
-                                    x="0"
-                                    y="0"
-                                    width="100"
-                                    height="100"
-                                    preserveAspectRatio="xMidYMid slice"
-                                />
-                            </pattern>
-                        )}
-                    </defs>
+                    {defs}
                     <rect
                         x="10"
                         y="10"
                         width="80"
                         height="80"
                         rx="12"
-                        fill={
-                            stampImageUrl && isFilled
-                                ? 'url(#stampPattern)'
-                                : fillColor
-                        }
+                        fill={fill}
                         stroke={strokeColor}
                         strokeWidth="2"
                     />
@@ -863,33 +836,60 @@ export default function Index({
             ),
             hexagon: (
                 <svg width="100%" height="100%" viewBox="0 0 100 100">
-                    <defs>
-                        {stampImageUrl && (
-                            <pattern
-                                id="stampPattern"
-                                x="0"
-                                y="0"
-                                width="1"
-                                height="1"
-                            >
-                                <image
-                                    href={stampImageUrl}
-                                    x="0"
-                                    y="0"
-                                    width="100"
-                                    height="100"
-                                    preserveAspectRatio="xMidYMid slice"
-                                />
-                            </pattern>
-                        )}
-                    </defs>
+                    {defs}
                     <path
                         d="M50 5 L90 27.5 L90 72.5 L50 95 L10 72.5 L10 27.5 Z"
-                        fill={
-                            stampImageUrl && isFilled
-                                ? 'url(#stampPattern)'
-                                : fillColor
-                        }
+                        fill={fill}
+                        stroke={strokeColor}
+                        strokeWidth="2"
+                    />
+                </svg>
+            ),
+            heart: (
+                <svg width="100%" height="100%" viewBox="0 0 100 100">
+                    {defs}
+                    <path
+                        d="M50 88 C24 66 12 51 12 34 C12 20 22 10 36 10 C44 10 50 15 50 22 C50 15 56 10 64 10 C78 10 88 20 88 34 C88 51 76 66 50 88 Z"
+                        fill={fill}
+                        stroke={strokeColor}
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            ),
+            diamond: (
+                <svg width="100%" height="100%" viewBox="0 0 100 100">
+                    {defs}
+                    <path
+                        d="M50 6 L94 50 L50 94 L6 50 Z"
+                        fill={fill}
+                        stroke={strokeColor}
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            ),
+            triangle: (
+                <svg width="100%" height="100%" viewBox="0 0 100 100">
+                    {defs}
+                    <path
+                        d="M50 8 L92 88 L8 88 Z"
+                        fill={fill}
+                        stroke={strokeColor}
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            ),
+            oval: (
+                <svg width="100%" height="100%" viewBox="0 0 100 100">
+                    {defs}
+                    <ellipse
+                        cx="50"
+                        cy="50"
+                        rx="43"
+                        ry="32"
+                        fill={fill}
                         stroke={strokeColor}
                         strokeWidth="2"
                     />
@@ -899,7 +899,7 @@ export default function Index({
 
         return (
             <div className="relative h-full w-full">
-                {shapes[shape]}
+                {shapes[shape] || shapes.circle}
                 {isReward && (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <span
@@ -1030,9 +1030,16 @@ export default function Index({
                                                         ? perk.color
                                                         : cardTemplate.stampColor
                                                 }
+                                                filledColor={
+                                                    cardTemplate.stampFilledColor
+                                                }
+                                                emptyColor={
+                                                    cardTemplate.stampEmptyColor
+                                                }
                                                 stampImage={
                                                     cardTemplate.stampImage
                                                 }
+                                                patternId={`completed-${completed.id}-stamp-${index}`}
                                             />
                                         </div>
                                     </div>
@@ -1541,6 +1548,16 @@ export default function Index({
                                                                         ? perk.color
                                                                         : currentCard.stampColor
                                                                 }
+                                                                filledColor={
+                                                                    currentCard.stampFilledColor
+                                                                }
+                                                                emptyColor={
+                                                                    currentCard.stampEmptyColor
+                                                                }
+                                                                stampImage={
+                                                                    currentCard.stampImage
+                                                                }
+                                                                patternId={`active-${currentCard.id}-stamp-${index}`}
                                                             />
                                                         </div>
                                                         <span

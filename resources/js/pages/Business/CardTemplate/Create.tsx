@@ -205,6 +205,10 @@ export default function Create() {
                           <SelectItem value="circle">Circle</SelectItem>
                           <SelectItem value="square">Square</SelectItem>
                           <SelectItem value="hexagon">Hexagon</SelectItem>
+                          <SelectItem value="heart">Heart</SelectItem>
+                          <SelectItem value="diamond">Diamond</SelectItem>
+                          <SelectItem value="triangle">Triangle</SelectItem>
+                          <SelectItem value="oval">Oval</SelectItem>
                         </SelectContent>
                       </Select>
                       {errors.stampShape && <p className="text-xs md:text-sm text-red-500">{errors.stampShape}</p>}
