@@ -117,20 +117,6 @@ class StampCodeController extends Controller
             return back()->withErrors(['customer_qr' => 'This customer does not belong to your business.']);
         }
 
-        $recentStamp = StampCode::where('business_id', $business->id)
-            ->where('customer_id', $customer->id)
-            ->where('loyalty_card_id', $loyaltyCard->id)
-            ->whereNotNull('used_at')
-            ->where('used_at', '>=', now()->subSeconds(20))
-            ->latest('used_at')
-            ->first();
-
-        if ($recentStamp) {
-            return back()->withErrors([
-                'customer_qr' => 'This customer was already stamped just now. Ask the customer to refresh their phone to see the new stamp.',
-            ]);
-        }
-
         try {
             return DB::transaction(function () use ($business, $customer, $loyaltyCard, $validated) {
                 $stampCode = StampCode::create([

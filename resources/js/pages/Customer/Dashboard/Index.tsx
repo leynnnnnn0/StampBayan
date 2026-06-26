@@ -1246,7 +1246,8 @@ export default function Index({
                 <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-center text-xs font-medium text-amber-800 sm:text-sm">
                     You are currently offline. Last synced{' '}
                     {formatLastSynced(cachedSnapshot?.lastSyncedAt)}. Showing
-                    saved loyalty cards, rewards, history, and your personal QR.
+                    saved loyalty cards, rewards, history, and your personal
+                    QR. New stamps will appear when you come back online.
                 </div>
             )}
 
