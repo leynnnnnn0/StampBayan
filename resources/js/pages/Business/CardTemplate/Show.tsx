@@ -1,98 +1,18 @@
 import ModuleHeading from "@/components/module-heading";
 import AppLayout from "@/layouts/app-layout";
 import { Head, Link } from "@inertiajs/react";
-import { Sparkles, ArrowLeft, Edit, Bell, ChevronDown, Plus, MoreVertical } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import StampShape from '@/components/card-template/stamp-shape';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import type { CardTemplate } from '@/types';
 
-export default function Show({ cardTemplate }) {
-  const getPerkForStamp = (stampNumber) => {
+interface ShowProps {
+  cardTemplate: CardTemplate;
+}
+
+export default function Show({ cardTemplate }: ShowProps) {
+  const getPerkForStamp = (stampNumber: number) => {
     return cardTemplate.perks?.find(p => p.stampNumber === stampNumber);
-  };
-
-  const StampShape = ({ shape, isFilled, isReward, rewardText, color, details }) => {
-    const fillColor = isFilled ? (cardTemplate.stampFilledColor || color) : cardTemplate.stampEmptyColor;
-    const strokeColor = isFilled ? '#FFFFFF' : '#D1D5DB';
-    const stampImageUrl = cardTemplate.stampImage ? `/${cardTemplate.stampImage}` : null;
-
-    const shapes = {
-      circle: (
-        <svg width="100%" height="100%" viewBox="0 0 100 100">
-          <defs>
-            {stampImageUrl && (
-              <pattern id="stampPattern" x="0" y="0" width="1" height="1">
-                <image href={stampImageUrl} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-              </pattern>
-            )}
-          </defs>
-          <circle cx="50" cy="50" r="45" fill={stampImageUrl && isFilled ? "url(#stampPattern)" : fillColor} stroke={strokeColor} strokeWidth="2" />
-        </svg>
-      ),
-      star: (
-        <svg width="100%" height="100%" viewBox="0 0 100 100">
-          <defs>
-            {stampImageUrl && (
-              <pattern id="stampPattern" x="0" y="0" width="1" height="1">
-                <image href={stampImageUrl} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-              </pattern>
-            )}
-          </defs>
-          <path
-            d="M50 5 L55 20 L70 15 L70 30 L85 35 L75 47 L85 59 L70 64 L70 79 L55 74 L50 89 L45 74 L30 79 L30 64 L15 59 L25 47 L15 35 L30 30 L30 15 L45 20 Z"
-            fill={stampImageUrl && isFilled ? "url(#stampPattern)" : fillColor}
-            stroke={strokeColor}
-            strokeWidth="2"
-          />
-        </svg>
-      ),
-      square: (
-        <svg width="100%" height="100%" viewBox="0 0 100 100">
-          <defs>
-            {stampImageUrl && (
-              <pattern id="stampPattern" x="0" y="0" width="1" height="1">
-                <image href={stampImageUrl} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-              </pattern>
-            )}
-          </defs>
-          <rect x="10" y="10" width="80" height="80" rx="12" fill={stampImageUrl && isFilled ? "url(#stampPattern)" : fillColor} stroke={strokeColor} strokeWidth="2" />
-        </svg>
-      ),
-      hexagon: (
-        <svg width="100%" height="100%" viewBox="0 0 100 100">
-          <defs>
-            {stampImageUrl && (
-              <pattern id="stampPattern" x="0" y="0" width="1" height="1">
-                <image href={stampImageUrl} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-              </pattern>
-            )}
-          </defs>
-          <path
-            d="M50 5 L90 27.5 L90 72.5 L50 95 L10 72.5 L10 27.5 Z"
-            fill={stampImageUrl && isFilled ? "url(#stampPattern)" : fillColor}
-            stroke={strokeColor}
-            strokeWidth="2"
-          />
-        </svg>
-      )
-    };
-
-    return (
-      <div className="relative w-full h-full">
-        {shapes[shape]}
-        {isReward && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-white font-bold text-[8px] text-center px-1 leading-tight drop-shadow-lg" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
-              {rewardText}
-            </span>
-          </div>
-        )}
-        {isFilled && !isReward && !stampImageUrl && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Sparkles size={16} className="text-white animate-pulse" />
-          </div>
-        )}
-      </div>
-    );
   };
 
   const logoUrl = cardTemplate.logo ? `/${cardTemplate.logo}` : null;
@@ -216,7 +136,14 @@ export default function Show({ cardTemplate }) {
                               isReward={!!perk}
                               rewardText={perk?.reward}
                               color={perk ? perk.color : cardTemplate.stampColor}
+                              filledColor={cardTemplate.stampFilledColor}
+                              emptyColor={cardTemplate.stampEmptyColor}
+                              stampImage={cardTemplate.stampImage}
                               details={perk?.details}
+                              patternId={`show-stamp-${index}`}
+                              sparkleSize={16}
+                              rewardTextClassName="text-white font-bold text-[8px] text-center px-1 leading-tight drop-shadow-lg"
+                              showTooltip={false}
                             />
                           </div>
                           <span className="text-[9px] font-medium" style={{ color: cardTemplate.textColor }}>

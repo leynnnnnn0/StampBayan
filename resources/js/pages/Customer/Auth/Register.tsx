@@ -34,7 +34,6 @@ interface RegisterProps {
 }
 
 export default function Register({
-    businesses,
     selectedBusiness,
 }: RegisterProps) {
     const { data, setData, post, processing, errors, reset } = useForm({

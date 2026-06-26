@@ -68,7 +68,7 @@ export default function Index({ tickets, counts, currentStatus }: Props) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   
-  const { data, setData, post, processing, errors, reset } = useForm({
+  const { data, setData, processing, errors, reset } = useForm({
     subject: "",
     description: "",
     priority: "medium",

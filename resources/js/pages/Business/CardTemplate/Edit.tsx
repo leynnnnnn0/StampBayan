@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import ModuleHeading from "@/components/module-heading";
 import AppLayout from "@/layouts/app-layout";
 import { Head, useForm } from "@inertiajs/react";
-import { Upload, ImageIcon, Plus, Trash2, Sparkles, Terminal, LucideMessageCircleWarning, AlertTriangle } from 'lucide-react';
+import { ImageIcon, Plus, Trash2, LucideMessageCircleWarning, AlertTriangle, Sparkles } from 'lucide-react';
+import StampShape from '@/components/card-template/stamp-shape';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,13 +15,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import type { CardTemplate, CardTemplatePerk, StampShapeName } from '@/types';
 
-export default function Edit({ cardTemplate }) {
-  const { data, setData, put, processing, errors } = useForm({
+type CardTemplateForm = {
+  logo: string | null;
+  name: string;
+  heading: string;
+  valid_until: string;
+  subheading: string;
+  stampsNeeded: number;
+  mechanics: string;
+  backgroundColor: string;
+  textColor: string;
+  stampColor: string;
+  stampFilledColor: string;
+  stampEmptyColor: string;
+  stampImage: string | null;
+  backgroundImage: string | null;
+  footer: string;
+  stampShape: StampShapeName;
+  perks: CardTemplatePerk[];
+};
+
+interface EditProps {
+  cardTemplate: CardTemplate;
+}
+
+export default function Edit({ cardTemplate }: EditProps) {
+  const { data, setData, put, processing, errors } = useForm<CardTemplateForm>({
     logo: cardTemplate.logo ? `/${cardTemplate.logo}` : null,
     name: cardTemplate.name || '',
     heading: cardTemplate.heading || 'LOYALTY CARD',
-     valid_until: cardTemplate.valid_until,
+     valid_until: cardTemplate.valid_until || '',
     subheading: cardTemplate.subheading || 'Collect stamps and earn rewards!',
     stampsNeeded: cardTemplate.stampsNeeded || 10,
     mechanics: cardTemplate.mechanics || 'Get 1 stamp per purchase. Collect stamps to unlock rewards!',
@@ -35,12 +62,12 @@ export default function Edit({ cardTemplate }) {
     perks: cardTemplate.perks || []
   });
 
-  const handleImageUpload = (field, e) => {
-    const file = e.target.files[0];
+  const handleImageUpload = (field: 'logo' | 'stampImage' | 'backgroundImage', e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setData(field, reader.result);
+        setData(field, reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -50,22 +77,22 @@ export default function Edit({ cardTemplate }) {
     setData('perks', [...data.perks, { stampNumber: 1, reward: '', color: '#FF6B6B', details: '' }]);
   };
 
-  const updatePerk = (index, field, value) => {
+  const updatePerk = (index: number, field: keyof CardTemplatePerk, value: string | number) => {
     const updatedPerks = data.perks.map((perk, i) => 
       i === index ? { ...perk, [field]: value } : perk
     );
     setData('perks', updatedPerks);
   };
 
-  const removePerk = (index) => {
+  const removePerk = (index: number) => {
     setData('perks', data.perks.filter((_, i) => i !== index));
   };
 
-  const getPerkForStamp = (stampNumber) => {
+  const getPerkForStamp = (stampNumber: number) => {
     return data.perks.find(p => p.stampNumber === stampNumber);
   };
 const [showConfirmDialog, setShowConfirmDialog] = useState(false);
- const handleSubmit = (e) => {
+ const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   setShowConfirmDialog(true);
 };
@@ -86,101 +113,6 @@ const confirmUpdate = () => {
     }
   });
 };
-
-  const StampShape = ({ shape, isFilled, isReward, rewardText, color, details }) => {
-    const fillColor = isFilled ? (data.stampFilledColor || color) : data.stampEmptyColor;
-    const strokeColor = isFilled ? '#FFFFFF' : '#D1D5DB';
-
-    const shapes = {
-      circle: (
-        <svg width="70" height="70" viewBox="0 0 100 100" className="drop-shadow-lg transition-all duration-300 hover:scale-110 w-full h-full">
-          <defs>
-            {data.stampImage && (
-              <pattern id="stampPattern" x="0" y="0" width="1" height="1">
-                <image href={data.stampImage} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-              </pattern>
-            )}
-          </defs>
-          <circle cx="50" cy="50" r="45" fill={data.stampImage && isFilled ? "url(#stampPattern)" : fillColor} stroke={strokeColor} strokeWidth="3" />
-        </svg>
-      ),
-      star: (
-        <svg width="70" height="70" viewBox="0 0 100 100" className="drop-shadow-lg transition-all duration-300 hover:scale-110 w-full h-full">
-          <defs>
-            {data.stampImage && (
-              <pattern id="stampPattern" x="0" y="0" width="1" height="1">
-                <image href={data.stampImage} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-              </pattern>
-            )}
-          </defs>
-          <path
-            d="M50 5 L55 20 L70 15 L70 30 L85 35 L75 47 L85 59 L70 64 L70 79 L55 74 L50 89 L45 74 L30 79 L30 64 L15 59 L25 47 L15 35 L30 30 L30 15 L45 20 Z"
-            fill={data.stampImage && isFilled ? "url(#stampPattern)" : fillColor}
-            stroke={strokeColor}
-            strokeWidth="3"
-          />
-        </svg>
-      ),
-      square: (
-        <svg width="70" height="70" viewBox="0 0 100 100" className="drop-shadow-lg transition-all duration-300 hover:scale-110 w-full h-full">
-          <defs>
-            {data.stampImage && (
-              <pattern id="stampPattern" x="0" y="0" width="1" height="1">
-                <image href={data.stampImage} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-              </pattern>
-            )}
-          </defs>
-          <rect x="10" y="10" width="80" height="80" rx="12" fill={data.stampImage && isFilled ? "url(#stampPattern)" : fillColor} stroke={strokeColor} strokeWidth="3" />
-        </svg>
-      ),
-      hexagon: (
-        <svg width="70" height="70" viewBox="0 0 100 100" className="drop-shadow-lg transition-all duration-300 hover:scale-110 w-full h-full">
-          <defs>
-            {data.stampImage && (
-              <pattern id="stampPattern" x="0" y="0" width="1" height="1">
-                <image href={data.stampImage} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
-              </pattern>
-            )}
-          </defs>
-          <path
-            d="M50 5 L90 27.5 L90 72.5 L50 95 L10 72.5 L10 27.5 Z"
-            fill={data.stampImage && isFilled ? "url(#stampPattern)" : fillColor}
-            stroke={strokeColor}
-            strokeWidth="3"
-          />
-        </svg>
-      )
-    };
-
-    return (
-      <div className="relative group">
-        {shapes[shape]}
-        {isReward && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-white font-bold text-[10px] text-center px-1 leading-tight drop-shadow-lg" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
-              {rewardText}
-            </span>
-          </div>
-        )}
-        {isFilled && !isReward && !data.stampImage && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Sparkles size={20} className="text-white animate-pulse" />
-          </div>
-        )}
-        {isReward && details && (
-          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-            <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-xl whitespace-nowrap max-w-[200px] text-center">
-              <div className="font-bold mb-1">{rewardText}</div>
-              <div className="text-gray-300">{details}</div>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                <div className="border-4 border-transparent border-t-gray-900"></div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <AppLayout>
@@ -281,7 +213,7 @@ const confirmUpdate = () => {
                     {/* Stamp Shape */}
                     <div className="space-y-2">
                       <Label className="text-sm md:text-base">Stamp Shape</Label>
-                      <Select value={data.stampShape} onValueChange={(value) => setData('stampShape', value)}>
+                      <Select value={data.stampShape} onValueChange={(value) => setData('stampShape', value as StampShapeName)}>
                         <SelectTrigger className="text-xs md:text-sm">
                           <SelectValue />
                         </SelectTrigger>
@@ -669,7 +601,11 @@ const confirmUpdate = () => {
                                   isReward={!!perk}
                                   rewardText={perk?.reward}
                                   color={perk ? perk.color : data.stampColor}
+                                  filledColor={data.stampFilledColor}
+                                  emptyColor={data.stampEmptyColor}
+                                  stampImage={data.stampImage}
                                   details={perk?.details}
+                                  patternId={`edit-stamp-${index}`}
                                 />
                               </div>
                               <span className="text-[10px] sm:text-xs font-medium" style={{ color: data.textColor }}>

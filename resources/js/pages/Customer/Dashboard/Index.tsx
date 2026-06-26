@@ -43,6 +43,7 @@ import LOGO from '../../../../images/mainLogo.png';
 
 import { BrowserQRCodeReader } from '@zxing/browser';
 import { useEffect } from 'react';
+import type { SharedData } from '@/types';
 
 interface Perk {
     id: number;
@@ -77,8 +78,15 @@ interface StampCode {
     id: number;
     loyalty_card_id: number;
     code: string;
+    number_of_stamps: number;
     used_at: string;
     customer_id: number;
+}
+
+interface CompletedStamp {
+    id: number;
+    code: string;
+    used_at: string;
 }
 
 interface CompletedCard {
@@ -88,11 +96,9 @@ interface CompletedCard {
     stamps_collected: number;
     completed_at: string;
     card_cycle: number;
-    stamps_data: Array<{
-        id: number;
-        code: string;
-        used_at: string;
-    }>;
+    stamps_data:
+        | string
+        | CompletedStamp[];
 }
 
 interface PerkClaim {
@@ -126,6 +132,24 @@ interface Props {
     };
 }
 
+interface CustomerFlash {
+    active_card_id?: number;
+    card_completed?: boolean;
+    message?: string;
+    cycle_number?: number;
+    type?: string;
+}
+
+type ScanControls = {
+    stop: () => void;
+};
+
+function completedCardStamps(card: CompletedCard): CompletedStamp[] {
+    return typeof card.stamps_data === 'string'
+        ? (JSON.parse(card.stamps_data) as CompletedStamp[])
+        : card.stamps_data;
+}
+
 export default function Index({
     cardTemplates,
     stampCodes,
@@ -143,8 +167,8 @@ export default function Index({
         useState<CompletedCard | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [scanning, setScanning] = useState(false);
-    const { flash } = usePage().props as any;
-    const controlsRef = useRef<any>(null);
+    usePage<SharedData & { flash?: CustomerFlash }>();
+    const controlsRef = useRef<ScanControls | null>(null);
     const { data, setData, errors, post, processing, reset } = useForm({
         code: '',
         loyalty_card_id: cardTemplates[0]?.id || null,
@@ -292,7 +316,7 @@ export default function Index({
                 (result, error, controls) => {
                     controlsRef.current = controls;
                     if (result) {
-                        const scannedCode = result.text;
+                        const scannedCode = result.getText();
                         router.post(
                             '/stamps/record',
                             {
@@ -301,18 +325,19 @@ export default function Index({
                             },
                             {
                                 onSuccess: (page) => {
+                                    const flash = page.props.flash as CustomerFlash | undefined;
                                     const index = cardTemplates.findIndex(
                                         (card) =>
                                             card.id ===
-                                            page.props.flash.active_card_id,
+                                            flash?.active_card_id,
                                     );
                                     if (index !== -1)
                                         setCurrentCardIndex(index);
-                                    if (page.props.flash.card_completed) {
+                                    if (flash?.card_completed) {
                                         toast.success(
-                                            `🎉 ${page.props.flash.message}`,
+                                            `🎉 ${flash.message}`,
                                             {
-                                                description: `You completed cycle #${page.props.flash.cycle_number}!`,
+                                                description: `You completed cycle #${flash.cycle_number}!`,
                                             },
                                         );
                                     } else {
@@ -347,11 +372,12 @@ export default function Index({
             );
             controlsRef.current = controls;
         } catch (err) {
-            if (err.name === 'NotAllowedError')
+            const errorName = err instanceof Error ? err.name : '';
+            if (errorName === 'NotAllowedError')
                 toast.error('Camera permission denied.');
-            else if (err.name === 'NotFoundError')
+            else if (errorName === 'NotFoundError')
                 toast.error('No camera found.');
-            else if (err.name === 'NotReadableError')
+            else if (errorName === 'NotReadableError')
                 toast.error('Camera is already in use.');
             else toast.error('Failed to access camera.');
             setScanDialogOpen(false);
@@ -363,7 +389,9 @@ export default function Index({
         if (controlsRef.current) {
             try {
                 controlsRef.current.stop();
-            } catch (e) {}
+            } catch {
+                controlsRef.current = null;
+            }
             controlsRef.current = null;
         }
         if (videoRef.current && videoRef.current.srcObject) {
@@ -388,13 +416,14 @@ export default function Index({
         e.preventDefault();
         post('/stamps/record', {
             onSuccess: (page) => {
+                const flash = page.props.flash as CustomerFlash | undefined;
                 const index = cardTemplates.findIndex(
-                    (card) => card.id === page.props.flash.active_card_id,
+                    (card) => card.id === flash?.active_card_id,
                 );
                 if (index !== -1) setCurrentCardIndex(index);
-                if (page.props.flash.card_completed) {
-                    toast.success(`🎉 ${page.props.flash.message}`, {
-                        description: `You completed cycle #${page.props.flash.cycle_number}!`,
+                if (flash?.card_completed) {
+                    toast.success(`🎉 ${flash.message}`, {
+                        description: `You completed cycle #${flash.cycle_number}!`,
                     });
                 } else {
                     toast.success('Stamped Successfully.');
@@ -422,7 +451,7 @@ export default function Index({
         isReward: boolean;
         rewardText?: string;
         color: string;
-        stampImage?: any;
+        stampImage?: string | null;
     }) => {
         const fillColor = isFilled
             ? currentCard.stampFilledColor || color
@@ -433,7 +462,7 @@ export default function Index({
             : null;
         if (stampImage) stampImageUrl = `/${stampImage}`;
 
-        const shapes: Record<string, JSX.Element> = {
+        const shapes: Record<string, React.ReactElement> = {
             circle: (
                 <svg width="100%" height="100%" viewBox="0 0 100 100">
                     <defs>
@@ -731,7 +760,7 @@ export default function Index({
         ? `/${currentCard.backgroundImage}`
         : null;
 
-    const ProfileDialog = () => (
+    const profileDialog = (
         <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -880,7 +909,7 @@ export default function Index({
     if (!cardTemplates || cardTemplates.length === 0) {
         return (
             <div className="min-h-screen bg-gray-50">
-                <ProfileDialog />
+                {profileDialog}
                 <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
                     <img src={LOGO} alt="business logo" className="h-10" />
                     <DropdownMenu>
@@ -924,7 +953,7 @@ export default function Index({
 
     return (
         <div className="flex min-h-screen flex-col bg-gray-50">
-            <ProfileDialog />
+            {profileDialog}
 
             {/* ── DESKTOP HEADER (hidden on mobile) ── */}
             <header className="hidden items-center justify-between border-b border-gray-200 bg-white px-6 py-4 shadow-sm sm:flex">
@@ -1685,8 +1714,8 @@ export default function Index({
                                     Stamp History
                                 </h4>
                                 <div className="max-h-60 space-y-2 overflow-y-auto">
-                                    {JSON.parse(
-                                        selectedCompletedCard.stamps_data,
+                                    {completedCardStamps(
+                                        selectedCompletedCard,
                                     ).map((stamp, i) => (
                                         <div
                                             key={i}

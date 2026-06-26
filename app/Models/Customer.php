@@ -12,10 +12,11 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Customer extends Model implements AuthenticatableContract, AuthorizableContract, CanResetPassword
 {
-    use Authenticatable, Authorizable, Notifiable, CanResetPasswordTrait;
+    use Authenticatable, Authorizable, HasFactory, Notifiable, CanResetPasswordTrait;
 
     protected $fillable = [
         'business_id',

@@ -9,6 +9,7 @@ import { Mail, User, Calendar, CreditCard, CheckCircle2, Clock } from "lucide-re
 interface StampCode {
     id: number;
     code: string;
+    number_of_stamps: number;
     used_at: string | null;
     loyalty_card: {
         name: string;
@@ -28,9 +29,6 @@ interface Props {
 }
 
 export default function Show({ customer }: Props) {
-    const usedStamps = customer.stamp_codes.filter(sc => sc.used_at !== null);
-    const unusedStamps = customer.stamp_codes.filter(sc => sc.used_at === null);
-
     return (
         <AppLayout>
             <Head title="Customer Details" />

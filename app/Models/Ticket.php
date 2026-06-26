@@ -35,6 +35,11 @@ class Ticket extends Model
         return $this->hasMany(TicketReply::class)->orderBy('created_at', 'asc');
     }
 
+    public function latestReply()
+    {
+        return $this->hasOne(TicketReply::class)->latestOfMany();
+    }
+
     public static function generateTicketNumber()
     {
         do {

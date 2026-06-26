@@ -17,9 +17,8 @@ class TicketController extends Controller
         $status = $request->get('status', 'all');
         
         $query = Auth::user()->business->tickets()
-            ->with(['replies' => function($query) {
-                $query->latest()->limit(1);
-            }])
+            ->with('latestReply')
+            ->withCount('replies')
             ->orderBy('created_at', 'desc');
 
         if ($status !== 'all') {
@@ -37,12 +36,12 @@ class TicketController extends Controller
                 'status_color' => $ticket->status_color,
                 'priority_color' => $ticket->priority_color,
                 'created_at' => $ticket->created_at->format('M d, Y h:i A'),
-                'replies_count' => $ticket->replies()->count(),
+                'replies_count' => $ticket->replies_count,
                 'has_images' => !empty($ticket->images),
-                'last_reply' => $ticket->replies->first() ? [
-                    'message' => $ticket->replies->first()->message,
-                    'created_at' => $ticket->replies->first()->created_at->format('M d, Y h:i A'),
-                    'is_staff' => $ticket->replies->first()->is_staff,
+                'last_reply' => $ticket->latestReply ? [
+                    'message' => $ticket->latestReply->message,
+                    'created_at' => $ticket->latestReply->created_at->format('M d, Y h:i A'),
+                    'is_staff' => $ticket->latestReply->is_staff,
                 ] : null,
             ];
         });
@@ -122,7 +121,7 @@ class TicketController extends Controller
                             return Storage::url($path);
                         }, $reply->images) : [],
                         'user' => $reply->user ? [
-                            'name' => $reply->user->name,
+                            'name' => $reply->user->username,
                             'email' => $reply->user->email,
                         ] : null,
                     ];

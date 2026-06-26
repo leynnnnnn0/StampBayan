@@ -36,6 +36,7 @@ interface Paginated<T> {
 interface StampCode {
   id: number;
   code: string;
+  number_of_stamps: number;
   customer: {
     username: string;
     email: string;
@@ -72,12 +73,6 @@ export default function Index({ stampCodes, filters }: Props) {
 
     return () => clearTimeout(delayDebounce);
   }, [search]);
-
-  const handlePageChange = (url: string | null) => {
-    if (url) {
-      router.get(url, {}, { preserveState: true });
-    }
-  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";

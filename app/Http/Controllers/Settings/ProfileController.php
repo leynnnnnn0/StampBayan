@@ -48,7 +48,7 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-         if (Auth::user()->email != 'sneakyfrekingbitch@gmail.com') {
+         if (Auth::user()->email === 'business@gmail.com') {
             return redirect()->back()->withErrors(['error' => 'Demo account cannot make changes.']);
         }
         $request->validate([

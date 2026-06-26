@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Business;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Staff>
@@ -17,7 +19,12 @@ class StaffFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'business_id' => Business::factory(),
+            'branch' => fake()->city(),
+            'username' => fake()->unique()->userName(),
+            'password' => Hash::make('password'),
+            'remarks' => fake()->sentence(),
+            'is_active' => true,
         ];
     }
 }

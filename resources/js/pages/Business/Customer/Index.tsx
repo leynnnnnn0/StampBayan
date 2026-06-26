@@ -64,12 +64,6 @@ export default function Index({ customers, filters }: Props) {
     return () => clearTimeout(delayDebounce);
   }, [search]);
 
-  const handlePageChange = (url: string | null) => {
-    if (url) {
-      router.get(url, {}, { preserveState: true });
-    }
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",

@@ -1,9 +1,9 @@
 import ModuleHeading from "@/components/module-heading";
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/layouts/app-layout";
-import { Head, useForm, router } from "@inertiajs/react";
-import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Head, useForm } from "@inertiajs/react";
+import { Plus, Pencil } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
     Dialog,
@@ -41,27 +41,10 @@ interface Props {
     };
 }
 
-export default function Index({ staffs, filters }: Props) {
+export default function Index({ staffs }: Props) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingBranch, setEditingBranch] = useState<Staff | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<Staff | null>(null);
-    const [search, setSearch] = useState("");
-    
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            router.get(
-                "/business/staffs",
-                { search },
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                }
-            );
-        }, 300);
-
-        return () => clearTimeout(timeoutId);
-    }, [search]);
 
     const form = useForm({
         branch: "",

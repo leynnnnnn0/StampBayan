@@ -15,7 +15,7 @@ class CardTempalateController extends Controller
     {
         $cardTemplates = Auth::user()->business->loyaltyCards()
             ->with('perks')
-            ->with(['stamp_codes' => function ($q) {
+            ->withCount(['stamp_codes as used_stamp_codes_count' => function ($q) {
                 $q->whereNotNull('used_at');
             }])
             ->latest()

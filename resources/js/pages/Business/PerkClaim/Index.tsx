@@ -111,7 +111,7 @@ export default function Index({ perkClaims, filters, stats }: Props) {
     }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [search]);
+  }, [search, filters.status]);
 
   const handleStatusFilter = (status: string) => {
     router.get(

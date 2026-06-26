@@ -47,7 +47,11 @@ class DashboardController extends Controller
     public function getBusinesses()
     {
         try {
-            $businesses = Business::with('user', 'customers', 'staffs')->where('id', '!=', 1)->latest()->get();
+            $businesses = Business::with('user')
+                ->withCount(['customers', 'staffs'])
+                ->where('id', '!=', 1)
+                ->latest()
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -56,8 +60,8 @@ class DashboardController extends Controller
                         'id' => $business->id,
                         'name' => $business->name,
                         'user' => $business->user->id,
-                        'customers' => $business->customers->count(),
-                        'staffs' => $business->staffs->count(),
+                        'customers' => $business->customers_count,
+                        'staffs' => $business->staffs_count,
                         'created_at' => $business->created_at,
                     ];
                 })
@@ -75,7 +79,12 @@ class DashboardController extends Controller
     public function getBusiness($id)
     {
         try {
-            $business = Business::with('customers.stamp_codes','user','staffs')->findOrFail($id);
+            $business = Business::with([
+                    'user',
+                    'staffs',
+                    'customers' => fn ($query) => $query->withCount('stamp_codes'),
+                ])
+                ->findOrFail($id);
 
             return response()->json([
                 'success' => true,
@@ -90,7 +99,7 @@ class DashboardController extends Controller
                             'name' => $customer->username,
                             'email' => $customer->email,
                             'phone' => $customer->phone,
-                            'stamp_codes' => $customer->stamp_codes->count(),
+                            'stamp_codes' => $customer->stamp_codes_count,
                             'created_at' => $customer->created_at,
                         ];
                     }),

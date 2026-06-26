@@ -4,7 +4,6 @@ import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 
-import DeleteUser from '@/components/delete-user';
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -51,21 +50,21 @@ export default function Profile({
                         {({ processing, recentlySuccessful, errors }) => (
                             <>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="name">Username</Label>
+                                    <Label htmlFor="username">Username</Label>
 
                                     <Input
-                                        id="name"
+                                        id="username"
                                         className="mt-1 block w-full"
                                         defaultValue={auth.user.username}
-                                        name="name"
+                                        name="username"
                                         required
-                                        autoComplete="name"
+                                        autoComplete="username"
                                         placeholder="Full name"
                                     />
 
                                     <InputError
                                         className="mt-2"
-                                        message={errors.name}
+                                        message={errors.username}
                                     />
                                 </div>
 

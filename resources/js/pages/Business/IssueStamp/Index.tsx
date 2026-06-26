@@ -1,7 +1,6 @@
-import ModuleHeading from "@/components/module-heading";
 import AppLayout from "@/layouts/app-layout";
 import { Head, router } from "@inertiajs/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -10,12 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-
-interface StampCode {
-  code: string;
-  qr_url: string;
-  created_at: string;
-}
 
 interface LoyaltyCard {
   id: number;
@@ -28,6 +21,7 @@ interface Props {
     code: string;
     qr_url: string;
     created_at: string;
+    number_of_stamps?: number;
   };
   cards: LoyaltyCard[];
   loyalty_card_id?: string;
@@ -37,17 +31,10 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
   const [loading, setLoading] = useState(false);
   const [downloadingOffline, setDownloadingOffline] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string>(
-     loyalty_card_id?.toString || cards.length > 0 ? cards[0].id.toString() : ""
+     loyalty_card_id ? loyalty_card_id.toString() : cards.length > 0 ? cards[0].id.toString() : ""
   );
   const [numberOfStamps, setNumberOfStamps] = useState<number>(1);
   const [numberOfStampsError, setNumberOfStampsError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (loyalty_card_id) {
-      setSelectedCardId(loyalty_card_id.toString());
-    }
-  }, [loyalty_card_id]);
-
 
   const [error, setError] = useState<string | null>(null);
 

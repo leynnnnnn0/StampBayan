@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { BookOpen, LayoutDashboard, Stamp, Gift, Hash, CreditCard, Users, QrCode, Ticket, Settings, Search, X, Store } from 'lucide-react';
+import React, { useState } from 'react';
+import { BookOpen, LayoutDashboard, Stamp, Gift, Hash, CreditCard, Users, QrCode, Ticket, Search, X, Store } from 'lucide-react';
 import Dashboard from "../../../images/documentation/dashboard.png";
 import Register from "../../../images/documentation/register.png";
 import Validate from "../../../images/documentation/validate.png";
@@ -28,7 +28,28 @@ const Documentation = () => {
     // { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const content = {
+  type DocumentationSubsection = {
+    title: string;
+    content?: string;
+    items?: string[];
+    steps?: string[];
+    image?: React.ReactNode;
+  };
+
+  type DocumentationSection = {
+    title: string;
+    description: string;
+    sections: DocumentationSubsection[];
+  };
+
+  type SearchResult = {
+    sectionId: string;
+    title: string;
+    description: string;
+    matchType: string;
+  };
+
+  const content: Record<string, DocumentationSection> = {
     overview: {
       title: 'System Overview',
       description: 'Welcome to the StampBayan documentation. This comprehensive guide will help you understand and utilize all features of the platform.',
@@ -407,10 +428,10 @@ const Documentation = () => {
     // }
   };
 
-  const searchResults = useMemo(() => {
+  const searchResults = (() => {
     if (!searchTerm.trim()) return [];
 
-    const results = [];
+    const results: SearchResult[] = [];
     const lowerSearch = searchTerm.toLowerCase();
 
     Object.entries(content).forEach(([sectionId, section]) => {
@@ -446,7 +467,7 @@ const Documentation = () => {
         }
 
         if (subsection.items) {
-          subsection.items.forEach(item => {
+          subsection.items.forEach((item: string) => {
             if (item.toLowerCase().includes(lowerSearch)) {
               results.push({
                 sectionId,
@@ -459,7 +480,7 @@ const Documentation = () => {
         }
 
         if (subsection.steps) {
-          subsection.steps.forEach(step => {
+          subsection.steps.forEach((step: string) => {
             if (step.toLowerCase().includes(lowerSearch)) {
               results.push({
                 sectionId,
@@ -478,20 +499,20 @@ const Documentation = () => {
     );
 
     return uniqueResults.slice(0, 10);
-  }, [searchTerm]);
+  })();
 
-  const handleSearch = (value) => {
+  const handleSearch = (value: string) => {
     setSearchTerm(value);
     setIsSearching(value.trim().length > 0);
   };
 
-  const handleSearchResultClick = (sectionId) => {
+  const handleSearchResultClick = (sectionId: string) => {
     setActiveSection(sectionId);
     setSearchTerm('');
     setIsSearching(false);
   };
 
-  const renderContent = (section) => {
+  const renderContent = (section: DocumentationSection) => {
     return (
       <div className="space-y-4 sm:space-y-6">
         <div>
@@ -499,7 +520,7 @@ const Documentation = () => {
           <p className="text-base sm:text-lg text-gray-600">{section.description}</p>
         </div>
 
-        {section.sections.map((subsection, idx) => (
+        {section.sections.map((subsection: DocumentationSubsection, idx: number) => (
           <div key={idx} className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3">{subsection.title}</h2>
             
@@ -511,7 +532,7 @@ const Documentation = () => {
 
             {subsection.items && (
               <ul className="space-y-2">
-                {subsection.items.map((item, i) => (
+                {subsection.items.map((item: string, i: number) => (
                   <li key={i} className="flex items-start">
                     <span className="text-blue-600 mr-2 mt-1 flex-shrink-0">•</span>
                     <span className="text-sm sm:text-base text-gray-700">{item}</span>
@@ -522,7 +543,7 @@ const Documentation = () => {
 
             {subsection.steps && (
               <ol className="space-y-3">
-                {subsection.steps.map((step, i) => (
+                {subsection.steps.map((step: string, i: number) => (
                   <li key={i} className="flex items-start">
                     <span className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold mr-3">{i + 1}</span>
                     <span className="text-sm sm:text-base text-gray-700 pt-0.5">{step}</span>

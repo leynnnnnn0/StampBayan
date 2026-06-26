@@ -41,9 +41,9 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::get('/pro-plan', function () {
-    return Inertia::render('pro-plan');
-})->name('pro-plan');
+Route::get('/pricing', function () {
+    return Inertia::render('pricing');
+})->name('pricing');
 
 Route::get('/documentation', [DocumentationController::class, 'index']);
 

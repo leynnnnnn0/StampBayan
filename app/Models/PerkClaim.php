@@ -14,7 +14,7 @@ class PerkClaim extends Model
         'is_redeemed',
         'redeemed_at',
         'redeemed_by',
-        'notes',
+        'remarks',
     ];
 
     protected $casts = [

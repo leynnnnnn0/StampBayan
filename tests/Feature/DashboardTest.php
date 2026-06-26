@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Business;
 use App\Models\User;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -9,7 +10,10 @@ test('guests are redirected to the login page', function () {
 });
 
 test('authenticated users can visit the dashboard', function () {
-    $this->actingAs($user = User::factory()->create());
+    $user = User::factory()->create();
+    Business::factory()->for($user)->create();
+
+    $this->actingAs($user);
 
     $this->get(route('dashboard'))->assertOk();
 });

@@ -1,73 +1,647 @@
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
-import { Head, router, useForm } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import Article from "../../images/article.jpg";
+import StampBayanMap from "./StampBayanMap";
 import {
+    ArrowRight,
+    BadgeDollarSign,
     BarChart3,
-    Camera,
+    Bell,
+    Box,
+    CalendarDays,
     Check,
-    CheckCircle2,
     ChevronDown,
+    Chrome,
+    CircleDollarSign,
+    ClipboardList,
+    Clock3,
+    Code2,
     Download,
-    Facebook,
-    Globe,
-    Headphones,
+    Gift,
+    FileSearch,
+    Globe2,
+    IdCard,
     Instagram,
-    Mail,
-    Palette,
-    Phone,
-    QrCode,
-    QrCodeIcon,
+    LayoutGrid,
+    Menu,
+    MessageCircle,
+    PackageSearch,
+    PieChart,
+    Play,
+    Search,
     Send,
-    Smartphone,
+    ShieldCheck,
     Sparkles,
-    Star,
+    Stamp,
+    Store,
+    Target,
+    Ticket,
     TrendingUp,
-    User2,
     Users,
-    Wifi,
-    WifiOff,
+    WandSparkles,
+    X,
+    Youtube,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import homeBackground from '../../images/homeBackground.png';
-import LOGO from '../../images/mainLogo.png';
+import dashboardSnapshot from '../../images/documentation/dashboard.png';
+import MainLogo from '../../../public/images/mainLogo.png';
+const navItems = [
+    { label: 'Platform', hasDropdown: true },
+    { label: 'Resources', hasDropdown: true },
+    { label: 'Pricing', href: '/pricing' },
+];
+
+const navDropdownLinks: Record<string, { label: string; href: string }[]> = {
+    Platform: [
+        { label: 'Admin Login', href: '/login' },
+        { label: 'Staff Login', href: '/staff/login' },
+        { label: 'Customer Login', href: '/customer/login' },
+    ],
+    Resources: [
+        { label: 'Documentation', href: '/documentation' },
+        { label: 'Latest Articles', href: '#latest-articles' },
+        { label: 'Business Map', href: '#business-map' },
+    ],
+};
+
+const productCards = [
+    {
+        name: 'Stamp Cards',
+        price: 'Free setup',
+        revenue: 'Unlimited',
+        icon: ClipboardList,
+        tint: 'from-amber-100 to-orange-50',
+    },
+    {
+        name: 'QR Code Scanning',
+        price: 'Fast check-in',
+        revenue: 'No paper',
+        icon: Target,
+        tint: 'from-rose-100 to-red-50',
+    },
+    {
+        name: 'Customer Profiles',
+        price: 'Auto saved',
+        revenue: 'Live data',
+        icon: Store,
+        tint: 'from-cyan-100 to-blue-50',
+    },
+    {
+        name: 'Reward Claims',
+        price: 'Easy redeem',
+        revenue: 'Tracked',
+        icon: BadgeDollarSign,
+        tint: 'from-pink-100 to-violet-50',
+    },
+    {
+        name: 'Staff Access',
+        price: 'Role ready',
+        revenue: 'Secure',
+        icon: ShieldCheck,
+        tint: 'from-lime-100 to-emerald-50',
+    },
+    {
+        name: 'Visit Analytics',
+        price: 'Daily trends',
+        revenue: 'Insights',
+        icon: BarChart3,
+        tint: 'from-sky-100 to-indigo-50',
+    },
+    {
+        name: 'Perk Alerts',
+        price: 'Instant updates',
+        revenue: 'Ready',
+        icon: Bell,
+        tint: 'from-purple-100 to-fuchsia-50',
+    },
+    {
+        name: 'QR Studio',
+        price: 'Brandable',
+        revenue: 'Printable',
+        icon: LayoutGrid,
+        tint: 'from-emerald-100 to-teal-50',
+    },
+    {
+        name: 'Offline Stamp Codes',
+        price: 'Backup ready',
+        revenue: 'Synced',
+        icon: FileSearch,
+        tint: 'from-orange-100 to-yellow-50',
+    },
+];
+
+const authChoices = [
+    { label: 'Customer', signIn: '/customer/login', signUp: '/customer/register' },
+    { label: 'Business', signIn: '/login', signUp: '/register' },
+];
+
+const footerLinks = [
+    {
+        title: 'Platform',
+        links: [
+            { label: 'Staff Login', href: '/staff/login' },
+            { label: 'Admin Login', href: '/login' },
+            { label: 'Customer Login', href: '/customer/login' },
+        ],
+    },
+    {
+        title: 'Business Tools',
+        links: [
+            { label: 'Card Templates', href: '#' },
+            { label: 'Customer List', href: '#' },
+            { label: 'Stamp Codes', href: '#' },
+        ],
+    },
+    {
+        title: 'Company',
+        links: [
+            { label: 'Pricing', href: '/pricing' },
+            { label: 'About', href: '#' },
+            { label: 'Contact', href: '#' },
+        ],
+    },
+];
+
+const toolIcons = [
+    { icon: LayoutGrid, color: 'bg-red-500', label: 'Dashboard' },
+    { icon: Stamp, color: 'bg-violet-600', label: 'Issue Stamp' },
+    { icon: Gift, color: 'bg-neutral-900', label: 'Perk Claims' },
+    { icon: Code2, color: 'bg-blue-500', label: 'Stamp Codes' },
+    { icon: IdCard, color: 'bg-emerald-500', label: 'Card Templates' },
+    { icon: Users, color: 'bg-red-500', label: 'Customers', large: false },
+    { icon: Search, color: 'bg-yellow-400', label: 'QR Studio' },
+    { icon: WandSparkles, color: 'bg-orange-500', label: 'QR Design' },
+    { icon: Ticket, color: 'bg-blue-500', label: 'Tickets' },
+    { icon: MessageCircle, color: 'bg-pink-500', label: 'Support' },
+];
+
+import LoyaltyCard from '../../images/program.png';
+import Quick from '../../images/quick.png';
+import Track from '../../images/folder.png';
+import Insights from '../../images/metrics.png';
+import Mobile from '../../images/mobile-friendly.png';
+import Organized from '../../images/binder.png';
+import Phone from '../../images/phone.png';
+const perks = [
+    {
+        icon: Sparkles,
+        title: 'Paperless loyalty',
+        body: 'Replace punch cards with QR-powered digital stamp cards customers can keep on their phones.',
+        visual: LoyaltyCard,
+    },
+    {
+        icon: Clock3,
+        title: 'Fast counter flow',
+        body: 'Staff can issue stamps and redeem perks in seconds, keeping queues short during busy hours.',
+        visual: Quick,
+    },
+    {
+        icon: BadgeDollarSign,
+        title: 'Reward tracking',
+        body: 'Every claim is recorded clearly so owners know which rewards are driving repeat visits.',
+        visual: Track,
+    },
+    {
+        icon: PieChart,
+        title: 'Customer insights',
+        body: 'See customers, stamps given, visits by day, and return frequency from the business dashboard.',
+        visual: Insights,
+    },
+    {
+        icon: Bell,
+        title: 'Perk claim visibility',
+        body: 'Keep pending and redeemed claims organized so no reward request gets lost.',
+        visual: Organized,
+    },
+    {
+        icon: Globe2,
+        title: 'Mobile friendly',
+        body: 'Customers can join, check stamps, and view rewards from any modern phone browser.',
+        visual: Mobile,
+    },
+];
+
+const articles = [
+    {
+        title: 'Your Loyalty Program Shouldn\'t Just Retain Customers — It Should Grow Their Business and Yours',
+        date: 'September 17, 2025',
+        read: '6 min read',
+        url: 'https://www.entrepreneur.com/growing-a-business/the-best-loyalty-programs-grow-customer-businesses-not/496537',
+        source: 'Entrepreneur',
+    },
+    {
+        title: 'Reshaping Customer Loyalty Programs',
+        date: 'March 20, 2026',
+        read: '12 min read',
+        url: 'https://www.deloitte.com/us/en/insights/industry/retail-distribution/reshaping-customer-loyalty-programs.html',
+        source: 'Deloitte Insights',
+    },
+    {
+        title: 'Benefits of Implementing a Customer Loyalty Program',
+        date: 'January 20, 2026',
+        read: '8 min read',
+        url: 'https://rits.center/blog/benefits-of-implementing-a-customer-loyalty-program',
+        source: 'RITS Center',
+    },
+    {
+        title: '100+ Staggering Customer Loyalty Program Statistics for 2025',
+        date: 'September 1, 2025',
+        read: '10 min read',
+        url: 'https://www.trueloyal.com/resources/loyalty-statistics/',
+        source: 'True Loyal',
+    },
+    {
+        title: 'Top Loyalty Trends for 2026: Driving Profit, Not Just Participation',
+        date: 'September 22, 2025',
+        read: '7 min read',
+        url: 'https://www.retaildive.com/spons/top-loyalty-trends-for-2026-driving-profit-not-just-participation/809432/',
+        source: 'Retail Dive',
+    },
+];
+
+const heroProductCards = [
+    {
+        name: 'Free Coffee',
+        stampsRequired: 5,
+        description: 'Any size, any drink',
+        image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&q=80',
+    },
+    {
+        name: '50% Off Pizza',
+        stampsRequired: 8,
+        description: 'Any regular or large',
+        image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80',
+    },
+    {
+        name: 'Free Dessert',
+        stampsRequired: 10,
+        description: 'Any item from dessert menu',
+        image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=80',
+    },
+    {
+        name: 'Free Salad',
+        stampsRequired: 6,
+        description: 'Regular size, any dressing',
+        image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80',
+    },
+    {
+        name: 'Free Meal',
+        stampsRequired: 12,
+        description: 'Burger + fries + drink',
+        image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80',
+    },
+    {
+        name: '25% Off Smoothie',
+        stampsRequired: 4,
+        description: 'Any blended drink',
+        image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80',
+    },
+    {
+        name: 'Free Pastry',
+        stampsRequired: 3,
+        description: 'Croissant, muffin, or roll',
+        image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&q=80',
+    },
+    {
+        name: 'VIP Birthday Treat',
+        stampsRequired: 20,
+        description: 'Free slice + loyalty badge',
+        image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&q=80',
+    },
+];
+
+
+const partnerBusinesses = [
+    {
+        name: 'Manila Cafe Bistro',
+        address: 'Sampaloc, Manila',
+        type: 'Café',
+        lat: 14.6079,
+        lng: 120.9881,
+    },
+    {
+        name: 'Papakape Fort Santiago',
+        address: 'Intramuros, Manila',
+        type: 'Café',
+        lat: 14.5947,
+        lng: 120.9696,
+    },
+    {
+        name: 'House of Lechon',
+        address: 'Cebu City',
+        type: 'Restaurant',
+        lat: 10.3177,
+        lng: 123.9017,
+    },
+    {
+        name: 'Bell+Amadeus',
+        address: 'Cebu City',
+        type: 'Restaurant',
+        lat: 10.3282,
+        lng: 123.909,
+    },
+    {
+        name: 'SVS Salon Prime',
+        address: 'Davao City',
+        type: 'Salon',
+        lat: 7.0756,
+        lng: 125.6116,
+    },
+    {
+        name: "Masters' Classe Salon",
+        address: 'Davao City',
+        type: 'Salon',
+        lat: 7.0991,
+        lng: 125.6259,
+    },
+    {
+        name: 'Victoria Bakery',
+        address: 'Baguio City',
+        type: 'Bakery',
+        lat: 16.4144,
+        lng: 120.5967,
+    },
+    {
+        name: 'American Backyard',
+        address: 'Iloilo City',
+        type: 'Restaurant',
+        lat: 10.7118,
+        lng: 122.5512,
+    },
+    {
+        name: 'Waterfront Seafood',
+        address: 'Iloilo City',
+        type: 'Restaurant',
+        lat: 10.7013,
+        lng: 122.5566,
+    },
+];
+
+
+function HeroTransformCard({ item }: { item: (typeof heroLanes)[number] }) {
+    return (
+        <div
+            className="hero-transform-card"
+            style={
+                {
+                    '--card-top': `${item.top}px`,
+                    '--card-width': `${item.size}px`,
+                    '--card-delay': `${item.delay}s`,
+                    '--card-duration': `${item.duration}s`,
+                    '--card-tilt': `${item.tilt}deg`,
+                    '--card-wave': `${item.wave}px`,
+                } as React.CSSProperties
+            }
+        >
+            <div className="hero-transform-card__inner">
+                <div className="hero-transform-card__face hero-transform-card__face--skeleton">
+                    <div className="h-9 w-9 shrink-0 rounded-lg bg-slate-200" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="h-2.5 w-28 rounded-full bg-slate-200" />
+                        <div className="h-2 w-20 rounded-full bg-slate-100" />
+                    </div>
+                    <div className="hidden min-w-0 flex-1 space-y-1.5 sm:block">
+                        <div className="h-2.5 w-24 rounded-full bg-slate-100" />
+                        <div className="h-2 w-14 rounded-full bg-slate-100" />
+                    </div>
+                    <div className="h-6 w-12 rounded-full bg-slate-100" />
+                </div>
+                <div className="hero-transform-card__face hero-transform-card__face--filled">
+                    <img
+                        src={item.card.image}
+                        alt={item.card.name}
+                        className="h-9 w-9 shrink-0 rounded-lg object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold text-slate-800">
+                            {item.card.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                            {item.card.description}
+                        </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                        <p className="text-xs font-bold text-amber-500">
+                            {item.card.stampsRequired}
+                        </p>
+                        <span className="text-[9px] font-medium text-slate-400">
+                            stamps
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <span
+                className="hero-transform-card__spark"
+                style={{
+                    animationDelay: `${item.delay + item.duration * 0.49}s`,
+                }}
+                aria-hidden="true"
+            />
+        </div>
+    );
+}
+
+const heroLanes = Array.from({ length: 16 }, (_, index) => ({
+    card: heroProductCards[index % heroProductCards.length],
+    delay: index * -0.58,
+    duration: 13.5 + (index % 4) * 0.85,
+    top: 66 + (index % 8) * 76,
+    tilt: index % 2 === 0 ? -4 : 4,
+    size: 250 + (index % 3) * 26,
+    wave: ((index % 5) - 2) * 12,
+}));
+
+
+
+function Logo() {
+    return (
+        <a href="/" className="flex items-center gap-2 font-semibold">
+            <img src={MainLogo} alt="StampBayan Logo" className='h-10' />
+        </a>
+    );
+}
+
+function ButtonLink({
+    href,
+    children,
+    variant = 'primary',
+    className = '',
+    target = ''
+}: {
+    href: string;
+    children: React.ReactNode;
+    variant?: 'primary' | 'secondary' | 'ghost';
+        className?: string;
+    target?: string;
+}) {
+    const variants = {
+        primary:
+            'bg-primary text-white shadow-lg shadow-primary/20 hover:-translate-y-0.5 hover:bg-blue-700',
+        secondary:
+            'border border-slate-200 bg-white text-slate-800 shadow-sm hover:-translate-y-0.5 hover:border-blue-200 hover:text-primary',
+        ghost: 'text-slate-700 hover:text-primary',
+    };
+
+    return (
+        <a
+            href={href}
+            target={target}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition duration-300 ${variants[variant]} ${className}`}
+        >
+            {children}
+        </a>
+    );
+}
+
+function AuthMenu({
+    type,
+    variant,
+}: {
+    type: 'signIn' | 'signUp';
+    variant: 'primary' | 'secondary';
+}) {
+    const [open, setOpen] = useState(false);
+    const label = type === 'signIn' ? 'Sign in' : 'Create Account';
+
+    return (
+        <div
+            className="relative"
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+        >
+            <button
+                type="button"
+                onClick={() => setOpen((current) => !current)}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition duration-300 ${
+                    variant === 'primary'
+                        ? 'bg-primary text-white shadow-lg shadow-primary/20 hover:-translate-y-0.5 hover:bg-blue-700'
+                        : 'border border-slate-200 bg-white text-slate-800 shadow-sm hover:-translate-y-0.5 hover:border-blue-200 hover:text-primary'
+                }`}
+            >
+                {label}
+                <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+            {open && (
+                <div className="absolute right-0 top-full z-50 w-52 pt-3">
+                    <div className="rounded-2xl border border-slate-100 bg-white p-2 shadow-2xl shadow-slate-200/80">
+                        {authChoices.map((choice) => (
+                            <a
+                                key={`${type}-${choice.label}`}
+                                href={choice[type]}
+                                className="block rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-primary"
+                            >
+                                {label} as {choice.label}
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ProductCard({
+    card,
+    index,
+}: {
+    card: (typeof productCards)[number];
+    index: number;
+}) {
+    const Icon = card.icon;
+
+    return (
+        <div
+            className="animate-float-slow flex min-w-[245px] items-center gap-3 rounded-2xl border border-slate-100 bg-white/95 p-3 shadow-xl shadow-slate-200/60 backdrop-blur"
+            style={{
+                animationDelay: `${index * 0.18}s`,
+                transform: `rotate(${index % 2 === 0 ? -4 : 4}deg)`,
+            }}
+        >
+            <span
+                className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${card.tint}`}
+            >
+                <Icon className="h-6 w-6 text-primary" />
+            </span>
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-950">
+                    {card.name}
+                </p>
+                <p className="text-xs text-slate-500">{card.price}</p>
+            </div>
+            <div className="text-right">
+                <p className="text-sm font-bold text-primary">
+                    {card.revenue}
+                </p>
+                <p className="text-[10px] font-medium text-slate-400">Status</p>
+            </div>
+        </div>
+    );
+}
+
+function ToolIcon({
+    item,
+    index,
+}: {
+    item: (typeof toolIcons)[number];
+    index: number;
+}) {
+    const Icon = item.icon;
+
+    return (
+        <div className="group relative" title={item.label}>
+            <div
+                className={`animate-float-slow grid ${item.large ? 'h-16 w-16 -translate-y-3 rounded-3xl' : 'h-12 w-12 rounded-2xl'} place-items-center ${item.color} text-white shadow-xl shadow-slate-400/30 transition hover:-translate-y-2`}
+                style={{ animationDelay: `${index * 0.12}s` }}
+            >
+                <Icon className={item.large ? 'h-8 w-8' : 'h-6 w-6'} />
+            </div>
+            <span className="pointer-events-none absolute top-full left-1/2 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-[10px] font-bold text-slate-700 opacity-0 shadow-lg transition group-hover:opacity-100">
+                {item.label}
+            </span>
+        </div>
+    );
+}
+
+function DashboardMockup() {
+    return (
+        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl shadow-blue-100/80">
+            <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+                <span className="h-3 w-3 rounded-full bg-red-400" />
+                <span className="h-3 w-3 rounded-full bg-yellow-400" />
+                <span className="h-3 w-3 rounded-full bg-emerald-400" />
+                <div className="ml-auto h-6 w-28 rounded-full bg-blue-50" />
+            </div>
+            <div className="bg-slate-50/70 p-3">
+                <img
+                    src={dashboardSnapshot}
+                    alt="StampBayan business dashboard with sidebar navigation and analytics cards"
+                    className="h-full max-h-[430px] w-full rounded-xl object-cover object-left-top"
+                />
+            </div>
+        </div>
+    );
+}
 
 export default function Welcome() {
-    const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
-    const [deferredPrompt, setDeferredPrompt] = useState(null);
-    const [isIOS, setIsIOS] = useState(false);
-    const [isAndroid, setIsAndroid] = useState(false);
-    const [isScrolled, setIsScrolled] = useState(false);
-    const [activeSection, setActiveSection] = useState('');
-    const [loginDialogOpen, setLoginDialogOpen] = useState(false);
-    const [isDemo, setIsDemo] = useState(false);
+    const { auth } = usePage<SharedData>().props;
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [mobileDropdownOpen, setMobileDropdownOpen] = useState<string | null>(
+        null,
+    );
+    const [dashboardDialogOpen, setDashboardDialogOpen] = useState(false);
+    const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
 
     useEffect(() => {
-        // Detect iOS
-        const iOS =
-            /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        setIsIOS(iOS);
-
-        // Detect Android
-        const android = /Android/.test(navigator.userAgent);
-        setIsAndroid(android);
-
-        // Listen for beforeinstallprompt (Android Chrome)
-        const handler = (e) => {
-            e.preventDefault();
-            setDeferredPrompt(e);
+        const handler = (event: Event) => {
+            event.preventDefault();
+            setInstallPrompt(event);
         };
 
         window.addEventListener('beforeinstallprompt', handler);
@@ -77,173 +651,49 @@ export default function Welcome() {
         };
     }, []);
 
-    useEffect(() => {
-        // Check if user just installed and redirect accordingly
-        const userType = localStorage.getItem('stampbayan_user_type');
-        if (
-            userType &&
-            window.matchMedia('(display-mode: standalone)').matches
-        ) {
-            const route =
-                userType === 'customer' ? '/customer/login' : '/login';
-            router.get(route);
-            localStorage.removeItem('stampbayan_user_type'); // Clear after redirect
-        }
-    }, []);
+    const handleMobileDownload = async () => {
+        const promptEvent = installPrompt as
+            | (Event & {
+                  prompt?: () => Promise<void>;
+                  userChoice?: Promise<{ outcome: string }>;
+              })
+            | null;
 
-    const handleDownloadApp = (type) => {
-        localStorage.setItem('stampbayan_user_type', type);
-
-        if (isAndroid) {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        toast.success('Installing StampBayan...');
-                    }
-                    setDeferredPrompt(null);
-                    setDownloadDialogOpen(false);
-                });
-            } else {
-                // Android but prompt not ready
-                toast.info(
-                    "To install: Click the 3 dots (⋮) in Chrome and select 'Install app'",
-                );
-            }
-        } else if (isIOS) {
-            toast.info('Please follow the steps below to install on iOS.');
+        if (promptEvent?.prompt) {
+            await promptEvent.prompt();
+            await promptEvent.userChoice?.catch(() => null);
+            setInstallPrompt(null);
+            return;
         }
+
+        const isIos =
+            /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        window.alert(
+            isIos
+                ? 'To install StampBayan: open this page in Safari, tap Share, then Add to Home Screen.'
+                : 'To install StampBayan: open your browser menu and choose Install app or Add to Home screen.',
+        );
     };
 
-    const steps = [
-        {
-            icon: <User2 className="h-8 w-8 text-white" />,
-            title: 'Create Business Account',
-            desc: 'Sign up in seconds and set up your business profile. Customize your loyalty program with your brand colors and rewards.',
-        },
-        {
-            icon: <QrCodeIcon className="h-8 w-8 text-white" />,
-            title: 'Print Your QR Code',
-            desc: 'Generate and print your unique QR code. Display it at your counter, entrance, or anywhere customers can easily scan it.',
-        },
-        {
-            icon: <Camera className="h-8 w-8 text-white" />,
-            title: 'Customers Scan & Join',
-            desc: 'Customers scan the QR code, register, and instantly join your loyalty program. No paper cards, no hassle!',
-        },
-    ];
-
-    useEffect(() => {
-        const handleScroll = () => {
-            const heroSection = document.querySelector('main');
-            if (heroSection) {
-                const heroBottom =
-                    heroSection.offsetTop + heroSection.offsetHeight;
-                setIsScrolled(window.scrollY > heroBottom - 100);
-            }
-
-            const sections = [
-                'benefits',
-                'features',
-                'how-it-works',
-                'pricing',
-                'faq',
-            ];
-            const scrollPosition = window.scrollY + 150;
-
-            for (const sectionId of sections) {
-                const section = document.getElementById(sectionId);
-                if (section) {
-                    const sectionTop = section.offsetTop;
-                    const sectionBottom = sectionTop + section.offsetHeight;
-
-                    if (
-                        scrollPosition >= sectionTop &&
-                        scrollPosition < sectionBottom
-                    ) {
-                        setActiveSection(sectionId);
-                        break;
-                    }
-                }
-            }
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    const scrollToSection = (e, id) => {
-        e.preventDefault();
-        const element = document.querySelector(id);
-        if (element) {
-            const offset = 100;
-            const elementPosition = element.getBoundingClientRect().top;
-            const offsetPosition =
-                elementPosition + window.pageYOffset - offset;
-
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: 'smooth',
-            });
+    const handleDashboardClick = () => {
+        if (auth.customer) {
+            router.visit('/customer/dashboard');
+            return;
         }
+
+        if (auth.user) {
+            router.visit('/business/dashboard');
+            return;
+        }
+
+        setDashboardDialogOpen(true);
     };
 
-    const handleLoginChoice = (type: string) => {
-        let route = '/login';
-        setLoginDialogOpen(false);
-        if (type == 'customer') {
-            route = '/customer/login';
-        }
-        if (isDemo) {
-            router.get(route, {
-                data: {
-                    is_demo: true,
-                },
-            });
-        } else {
-            router.get(route);
-        }
-    };
-
-    useEffect(() => {
-        if (!loginDialogOpen) {
-            setIsDemo(false);
-        }
-    }, [loginDialogOpen]);
-
-    const handleDemoClick = () => {
-        setIsDemo(true);
-        setLoginDialogOpen(true);
-    };
-
-    const [isOpen, setIsOpen] = useState(false);
-    const [submitSuccess, setSubmitSuccess] = useState(false);
-
-    const { data, setData, post, processing, reset, errors } = useForm({
-        email: '',
-        suggestion: '',
-    });
-
-    const handleSubmit = () => {
-        if (!data.suggestion.trim()) return;
-
-        post('/suggestions', {
-            onSuccess: () => {
-                setSubmitSuccess(true);
-
-                toast.success('Thank you for your feedback!');
-
-                // Reset form and close modal after 2 seconds
-                setTimeout(() => {
-                    reset();
-                    setSubmitSuccess(false);
-                    setIsOpen(false);
-                }, 3000);
-            },
-            onError: (errors) => {
-                console.error('Submission error:', errors);
-            },
-        });
+    const handleDashboardChoice = (type: 'business' | 'customer') => {
+        setDashboardDialogOpen(false);
+        router.visit(type === 'customer' ? '/customer/login' : '/login');
     };
 
     return (
@@ -270,11 +720,11 @@ export default function Welcome() {
                 />
                 <meta
                     name="description"
-                    content="FREE digital loyalty card system for Philippine businesses. Replace punch cards with QR scanning. No fees, unlimited customers. Start in 5 minutes."
+                    content="FREE digital loyalty card system for Philippine businesses. Replace paper punch cards with QR scanning, track customers, issue stamps, and manage rewards."
                 />
                 <meta
                     name="keywords"
-                    content="free loyalty program Philippines, customer loyalty card, digital stamp card, Filipino business tools"
+                    content="free loyalty program Philippines, customer loyalty card, digital stamp card, QR loyalty system, Filipino business tools"
                 />
                 <link rel="canonical" href="https://www.stampbayan.com" />
                 <meta property="og:type" content="website" />
@@ -285,1095 +735,804 @@ export default function Welcome() {
                 />
                 <meta
                     property="og:description"
-                    content="StampBayan is a FREE digital loyalty card system for Philippine businesses. Replace paper punch cards with QR code scanning. Track customer analytics, boost repeat sales, and build lasting relationships. No setup fees, unlimited customers. Start in 5 minutes."
+                    content="StampBayan helps Philippine businesses replace punch cards with QR-based digital loyalty cards. Track stamps, customers, perks, and repeat visits from one dashboard."
+                />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content="StampBayan - Free Digital Loyalty Card System"
                 />
                 <meta
-                    property="og:image"
-                    content="https://www.stampbayan.com/images/og-image.jpg"
+                    name="twitter:description"
+                    content="A free QR loyalty card platform for Philippine businesses."
                 />
-                <meta property="og:site_name" content="StampBayan" />
-                <meta property="og:locale" content="en_PH" />
-                <meta name="robots" content="index, follow" />
-                <meta name="apple-mobile-web-app-title" content="StampBayan" />
-                <meta name="application-name" content="StampBayan" />
-
-                <script type="application/ld+json">
-                    {JSON.stringify({
-                        '@context': 'https://schema.org',
-                        '@type': 'SoftwareApplication',
-                        name: 'StampBayan',
-                        applicationCategory: 'BusinessApplication',
-                        offers: {
-                            '@type': 'Offer',
-                            price: '0',
-                            priceCurrency: 'PHP',
-                        },
-                        description:
-                            'Free digital loyalty card system for Philippine businesses. Create, manage and track customer loyalty programs with QR code scanning.',
-                        operatingSystem: 'Web-based',
-                        countryOfOrigin: 'PH',
-                    })}
-                </script>
             </Head>
 
-            <div className="relative min-h-screen overflow-hidden bg-transparent">
-                {/* Header */}
-                <header
-                    className={`fixed top-0 right-0 left-0 z-50 px-4 py-4 transition-all duration-300 sm:px-6 lg:px-8 lg:py-6 xl:px-12 ${
-                        isScrolled ? 'bg-primary shadow-lg' : 'bg-transparent'
-                    }`}
-                >
-                    <div className="mx-auto flex max-w-7xl items-center justify-between">
-                        <div className="flex flex-shrink-0 items-center gap-2">
-                            <img
-                                src={LOGO}
-                                alt="StampBayan Logo"
-                                className="h-8 w-24 sm:h-10 sm:w-32"
-                            />
-                        </div>
+            <main className="min-h-screen overflow-x-hidden bg-white font-sans text-slate-950">
+                <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-100/70 bg-white/90 shadow-sm shadow-slate-200/30 backdrop-blur-xl">
+                    <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
+                        <Logo />
 
-                        <nav
-                            className={`hidden items-center gap-4 transition-all duration-300 lg:flex xl:gap-8 ${
-                                isScrolled
-                                    ? 'translate-y-0 opacity-100'
-                                    : 'pointer-events-none -translate-y-4 opacity-0'
-                            }`}
-                        >
-                            <a
-                                href="#benefits"
-                                onClick={(e) => scrollToSection(e, '#benefits')}
-                                className={`relative px-4 py-2 text-sm font-medium transition-all xl:px-5 ${activeSection === 'benefits' ? 'text-white' : 'text-white/90 hover:text-white'}`}
-                            >
-                                BENEFITS
-                                {activeSection === 'benefits' && (
-                                    <span className="absolute right-0 bottom-0 left-0 h-0.5 bg-white"></span>
-                                )}
-                            </a>
-                            <a
-                                href="#features"
-                                onClick={(e) => scrollToSection(e, '#features')}
-                                className={`relative px-4 py-2 text-sm font-medium transition-all xl:px-5 ${activeSection === 'features' ? 'text-white' : 'text-white/90 hover:text-white'}`}
-                            >
-                                FEATURES
-                                {activeSection === 'features' && (
-                                    <span className="absolute right-0 bottom-0 left-0 h-0.5 bg-white"></span>
-                                )}
-                            </a>
-
-                            <a
-                                href="#how-it-works"
-                                onClick={(e) =>
-                                    scrollToSection(e, '#how-it-works')
-                                }
-                                className={`relative px-4 py-2 text-sm font-medium transition-all xl:px-5 ${activeSection === 'how-it-works' ? 'text-white' : 'text-white/90 hover:text-white'}`}
-                            >
-                                HOW IT WORKS
-                                {activeSection === 'how-it-works' && (
-                                    <span className="absolute right-0 bottom-0 left-0 h-0.5 bg-white"></span>
-                                )}
-                            </a>
-                            <a
-                                href="#pricing"
-                                onClick={(e) => scrollToSection(e, '#pricing')}
-                                className={`relative px-4 py-2 text-sm font-medium transition-all xl:px-5 ${activeSection === 'pricing' ? 'text-white' : 'text-white/90 hover:text-white'}`}
-                            >
-                                PRICING
-                                {activeSection === 'pricing' && (
-                                    <span className="absolute right-0 bottom-0 left-0 h-0.5 bg-white"></span>
-                                )}
-                            </a>
-                            {/* PRICING LINK REMOVED */}
-                            <a
-                                href="#faq"
-                                onClick={(e) => scrollToSection(e, '#faq')}
-                                className={`relative px-4 py-2 text-sm font-medium transition-all xl:px-5 ${activeSection === 'faq' ? 'text-white' : 'text-white/90 hover:text-white'}`}
-                            >
-                                FAQ
-                                {activeSection === 'faq' && (
-                                    <span className="absolute right-0 bottom-0 left-0 h-0.5 bg-white"></span>
-                                )}
-                            </a>
-                        </nav>
-
-                        <div className="flex items-center gap-3">
-                            <Dialog
-                                open={loginDialogOpen}
-                                onOpenChange={setLoginDialogOpen}
-                            >
-                                <DialogTrigger asChild>
-                                    <button className="flex cursor-pointer items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-medium text-primary transition hover:bg-white/30 sm:px-8 sm:text-sm">
-                                        Login
-                                    </button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-md">
-                                    <DialogHeader>
-                                        <DialogTitle className="mb-2 text-center text-2xl font-bold">
-                                            Welcome Back!
-                                        </DialogTitle>
-                                        <DialogDescription className="text-center">
-                                            Choose your account type to continue
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="grid gap-4 py-4">
-                                        <button
-                                            onClick={() =>
-                                                handleLoginChoice('business')
-                                            }
-                                            className="group relative rounded-xl border-2 border-gray-200 p-6 transition-all duration-300 hover:border-blue-500 hover:shadow-lg"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 transition-colors group-hover:bg-blue-500">
-                                                    <svg
-                                                        className="h-6 w-6 text-blue-600 transition-colors group-hover:text-white"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
+                        <div className="hidden items-center gap-9 lg:flex">
+                            {navItems.map((item) => (
+                                <div key={item.label} className="group relative">
+                                    <a
+                                        href={item.href ?? '#'}
+                                        className="flex items-center gap-1 py-7 text-sm font-medium text-slate-700 transition hover:text-primary"
+                                    >
+                                        {item.label}
+                                        {item.hasDropdown && (
+                                            <ChevronDown className="h-3.5 w-3.5" />
+                                        )}
+                                    </a>
+                                    {item.hasDropdown && (
+                                        <div className="invisible absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 pt-2 opacity-0 transition duration-150 group-hover:visible group-hover:opacity-100">
+                                            <div className="rounded-2xl border border-slate-100 bg-white p-2 shadow-2xl shadow-slate-200/80">
+                                                {navDropdownLinks[item.label].map((link) => (
+                                                    <a
+                                                        key={link.label}
+                                                        href={link.href}
+                                                        className="block rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-primary"
                                                     >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                                                        />
-                                                    </svg>
-                                                </div>
-                                                <div className="flex-1 text-left">
-                                                    <h3 className="text-lg font-bold text-gray-900">
-                                                        Business Login
-                                                    </h3>
-                                                    <p className="text-sm text-gray-600">
-                                                        Access your business
-                                                        dashboard
-                                                    </p>
-                                                </div>
-                                                <ChevronDown className="h-5 w-5 -rotate-90 text-gray-400 transition-colors group-hover:text-blue-500" />
+                                                        {link.label}
+                                                    </a>
+                                                ))}
                                             </div>
-                                        </button>
-
-                                        <button
-                                            onClick={() =>
-                                                handleLoginChoice('customer')
-                                            }
-                                            className="group relative rounded-xl border-2 border-gray-200 p-6 transition-all duration-300 hover:border-green-500 hover:shadow-lg"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 transition-colors group-hover:bg-green-500">
-                                                    <svg
-                                                        className="h-6 w-6 text-green-600 transition-colors group-hover:text-white"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                        />
-                                                    </svg>
-                                                </div>
-                                                <div className="flex-1 text-left">
-                                                    <h3 className="text-lg font-bold text-gray-900">
-                                                        Customer Login
-                                                    </h3>
-                                                    <p className="text-sm text-gray-600">
-                                                        View your loyalty
-                                                        rewards
-                                                    </p>
-                                                </div>
-                                                <ChevronDown className="h-5 w-5 -rotate-90 text-gray-400 transition-colors group-hover:text-green-500" />
-                                            </div>
-                                        </button>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    </div>
-                </header>
-
-                <main className="relative z-10 px-4 py-8 sm:px-4 sm:py-12 lg:py-16 xl:py-20">
-                    {/* Background with gradient overlay */}
-                    <div className="absolute inset-0 -z-10">
-                        <div
-                            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                            style={{
-                                backgroundImage: `url(${homeBackground})`,
-                            }}
-                        ></div>
-                        <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/50 to-primary/70"></div>
-                    </div>
-
-                    <div className="mt-15 sm:mx-auto sm:max-w-7xl lg:mt-10">
-                        <div className="sm:mx-auto sm:max-w-7xl">
-                            <div className="mx-auto text-center leading-0 sm:max-w-5xl">
-                                <h1 className="mb-2 px-4 text-2xl leading-tight font-bold text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
-                                    Stop Losing Customers to Competitors
-                                </h1>
-
-                                <p className="mx-auto mb-8 max-w-3xl px-4 text-xs text-white/80 sm:mb-12 sm:text-base lg:text-lg">
-                                    Turn one-time buyers into loyal regulars
-                                    with a digital loyalty program that actually
-                                    works. No more lost punch cards. No more
-                                    forgotten rewards.
-                                </p>
-
-                                {/* UPDATED: Free Forever Messages */}
-                                <div className="mx-auto mb-8 flex flex-wrap justify-center gap-4 text-white/90 sm:mb-10 sm:gap-8">
-                                    <p className="flex flex-col text-xs sm:text-base">
-                                        <strong>✓ 100% Free</strong>
-                                        <span className="text-[10px] sm:text-xs">
-                                            Grow your business at zero cost
-                                        </span>
-                                    </p>
-                                    <p className="flex flex-col text-xs sm:text-base">
-                                        <strong>✓ Set up in 5 minutes</strong>
-                                        <span className="text-[10px] sm:text-xs">
-                                            Print QR code, start today
-                                        </span>
-                                    </p>
-                                    <p className="flex flex-col text-xs sm:text-base">
-                                        <strong>✓ Unlimited Access</strong>
-                                        <span className="text-[10px] sm:text-xs">
-                                            No subscription fees
-                                        </span>
-                                    </p>
-                                </div>
-
-                                <button
-                                    onClick={() => setLoginDialogOpen(true)}
-                                    className="cursor-pointer rounded-full bg-white px-5 py-2 text-xs font-semibold text-primary shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-10 sm:py-4 sm:text-lg md:text-base lg:px-12"
-                                >
-                                    <div className="flex flex-col items-center justify-between">
-                                        Create Free Account
-                                        <span className="text-[8px] sm:text-xs">
-                                            No Credit Card Required
-                                        </span>
-                                    </div>
-                                </button>
-
-                                <div className="mt-6 text-xs text-white sm:text-sm">
-                                    ✓ No hidden fees • ✓ No setup fees • ✓ 24/7
-                                    support
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </main>
-
-                {/* Stats Section */}
-                <section
-                    id="benefits"
-                    className="bg-gray/10 relative z-10 px-4 py-8 sm:px-6 sm:py-12 lg:py-16"
-                >
-                    <div className="mx-auto max-w-7xl">
-                        <div className="mb-12 text-center sm:mb-16">
-                            <h2 className="mb-4 text-lg font-bold sm:mb-6 sm:text-4xl lg:text-3xl">
-                                Why Loyalty Programs Work
-                            </h2>
-                            <p className="mx-auto -mt-2 max-w-3xl px-4 text-xs text-black/80 sm:text-lg lg:text-lg">
-                                The numbers speak for themselves
-                            </p>
-                        </div>
-                        <div className="-mt-5 grid gap-6 md:grid-cols-3 lg:gap-8">
-                            <div className="rounded-2xl border border-primary bg-white/10 p-6 shadow-2xl">
-                                <div className="mb-4 flex items-center gap-4">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-400/20">
-                                        <TrendingUp className="h-6 w-6 text-green-400" />
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold text-black">
-                                            67%
-                                        </div>
-                                        <div className="text-sm text-black/70">
-                                            More spending from loyal customers
-                                        </div>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-black/60">
-                                    <a
-                                        href="https://emarsys.com/learn/blog/increase-customer-loyalty-retention/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-semibold text-green-600 underline decoration-green-400 hover:text-green-700"
-                                    >
-                                        Studies
-                                    </a>{' '}
-                                    show loyal customers spend significantly
-                                    more than new ones
-                                </p>
-                            </div>
-
-                            <div className="rounded-2xl border border-primary bg-white/10 p-6 shadow-2xl">
-                                <div className="mb-4 flex items-center gap-4">
-                                    <div className="bg-white-400/20 flex h-12 w-12 items-center justify-center rounded-xl">
-                                        <Users className="text-white-400 h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold text-black">
-                                            5x
-                                        </div>
-                                        <div className="text-sm text-black/70">
-                                            More likely to return
-                                        </div>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-black/60">
-                                    Customers with{' '}
-                                    <a
-                                        href="https://www.businessdasher.com/customer-loyalty-statistics/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-black-600 decoration-black-400 font-semibold underline hover:text-blue-700"
-                                    >
-                                        loyalty cards
-                                    </a>{' '}
-                                    visit 5 times more often
-                                </p>
-                            </div>
-
-                            <div className="rounded-2xl border border-primary bg-white/10 p-6 shadow-2xl">
-                                <div className="mb-4 flex items-center gap-4">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-400/20">
-                                        <BarChart3 className="h-6 w-6 text-yellow-400" />
-                                    </div>
-                                    <div>
-                                        <div className="text-2xl font-bold text-black">
-                                            25-95%
-                                        </div>
-                                        <div className="text-sm text-black/70">
-                                            Profit increase potential
-                                        </div>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-black/60">
-                                    Just{' '}
-                                    <a
-                                        href="https://www.bain.com/insights/retaining-customers-is-the-real-challenge/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-semibold text-yellow-600 underline decoration-yellow-400 hover:text-yellow-700"
-                                    >
-                                        5% increase in retention
-                                    </a>{' '}
-                                    can boost profits dramatically
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Features Section */}
-                <section
-                    id="features"
-                    className="relative z-10 bg-primary/10 px-4 py-12 sm:px-6 sm:py-20 lg:py-28"
-                >
-                    <div className="mx-auto max-w-7xl">
-                        {/* Header Section */}
-                        <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                            <div className="max-w-2xl">
-                                <span className="text-sm font-bold tracking-wider text-primary uppercase">
-                                    Why Choose Us?
-                                </span>
-                                <h2 className="mt-2 text-3xl font-bold text-[#333333] sm:text-5xl">
-                                    Powerful Features for Your{' '}
-                                    <span className="text-primary">
-                                        Business
-                                    </span>
-                                </h2>
-                            </div>
-                            <p className="max-w-md text-base text-gray-500 md:text-right">
-                                Everything you need to run a successful loyalty
-                                program without the bloat.
-                            </p>
-                        </div>
-
-                        {/* Bento Grid */}
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {/* 1. Customer Analytics (Large Red Card) */}
-                            <article className="relative flex flex-col justify-between overflow-hidden rounded-[32px] bg-primary p-6 text-white sm:p-8 md:col-span-2 lg:col-span-1 lg:row-span-2">
-                                <div>
-                                    <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
-                                        <BarChart3 className="h-6 w-6 text-white" />
-                                    </div>
-                                    <h3 className="mb-4 text-2xl leading-tight font-bold sm:text-3xl">
-                                        Customer Analytics
-                                    </h3>
-                                    <p className="text-base opacity-90 sm:text-lg">
-                                        Track customer traffic by day, visit
-                                        frequency, and new customer counts to
-                                        make data-driven decisions and plan
-                                        better.
-                                    </p>
-                                </div>
-                                <div className="mt-8 flex items-center gap-2 text-sm font-semibold sm:mt-12">
-                                    <Check className="h-4 w-4" /> Real-time data
-                                    visualization
-                                </div>
-                            </article>
-
-                            {/* 2. Customizable Cards */}
-                            <article className="rounded-[32px] border-2 border-gray-100 bg-white p-6 transition-all hover:shadow-xl sm:p-8">
-                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-[#F4B942]">
-                                    <Palette className="h-6 w-6" />
-                                </div>
-                                <h3 className="mb-2 text-xl font-bold text-[#333333]">
-                                    Customizable Cards
-                                </h3>
-                                <p className="text-sm text-gray-500">
-                                    Design loyalty cards that match your brand
-                                    with custom colors, logos, and reward
-                                    structures.
-                                </p>
-                            </article>
-
-                            {/* 3. Scan to Stamp */}
-                            <article className="rounded-[32px] border-2 border-gray-100 bg-white p-6 transition-all hover:shadow-xl sm:p-8">
-                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-500">
-                                    <Wifi className="h-6 w-6" />
-                                </div>
-                                <h3 className="mb-2 text-xl font-bold text-[#333333]">
-                                    Scan to Stamp
-                                </h3>
-                                <p className="text-sm text-gray-500">
-                                    Customers can instantly earn stamps by
-                                    scanning your QR code with their smartphone.
-                                </p>
-                            </article>
-
-                            {/* 4. Custom QR Codes */}
-                            <article className="rounded-[32px] border-2 border-gray-100 bg-white p-6 transition-all hover:shadow-xl sm:p-8">
-                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-500">
-                                    <QrCode className="h-6 w-6" />
-                                </div>
-                                <h3 className="mb-2 text-xl font-bold text-[#333333]">
-                                    Custom QR Codes
-                                </h3>
-                                <p className="text-sm text-gray-500">
-                                    Generate unique QR codes for your business
-                                    to display at your location for easy
-                                    scanning.
-                                </p>
-                            </article>
-
-                            {/* 5. 24/7 Customer Support */}
-                            <article className="rounded-[32px] border-2 border-gray-100 bg-white p-6 transition-all hover:shadow-xl sm:p-8">
-                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-pink-500">
-                                    <Headphones className="h-6 w-6" />
-                                </div>
-                                <h3 className="mb-2 text-xl font-bold text-[#333333]">
-                                    24/7 Support
-                                </h3>
-                                <p className="text-sm text-gray-500">
-                                    Get help anytime with our ticket-based
-                                    support system. We're always here to assist.
-                                </p>
-                            </article>
-
-                            {/* 6. Offline Stamp Codes (Wide Card) */}
-                            <article className="flex flex-col justify-between overflow-hidden rounded-[32px] border-2 border-gray-100 bg-white p-6 sm:p-8 md:col-span-2">
-                                <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-                                    <div>
-                                        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-500">
-                                            <WifiOff className="h-5 w-5" />
-                                        </div>
-                                        <h3 className="mb-2 text-2xl font-bold text-black">
-                                            Offline Stamp Codes
-                                        </h3>
-                                        <p className="max-w-md text-sm text-gray-500">
-                                            Award stamps even without internet
-                                            connection using unique offline
-                                            codes. Look more professional, no
-                                            extra cost.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        <button className="flex-1 rounded-full bg-black px-6 py-2.5 text-xs font-bold text-white hover:bg-gray-800 sm:flex-none">
-                                            Generate
-                                        </button>
-                                        <button className="flex-1 rounded-full border border-gray-200 bg-white px-6 py-2.5 text-xs font-bold text-black hover:bg-gray-50 sm:flex-none">
-                                            Print
-                                        </button>
-                                    </div>
-                                </div>
-                            </article>
-
-                            {/* 7. Downloadable App */}
-                            <article className="rounded-[32px] border-2 border-gray-100 bg-white p-6 transition-all hover:shadow-xl sm:p-8 md:col-span-2 lg:col-span-1">
-                                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                                    <Smartphone className="h-6 w-6" />
-                                </div>
-                                <h3 className="mb-2 text-xl font-bold text-[#333333]">
-                                    Downloadable App
-                                </h3>
-                                <p className="mb-4 text-sm text-gray-500">
-                                    A dedicated space for customers to track
-                                    rewards and discover new deals.
-                                </p>
-                                <ul className="space-y-2">
-                                    <li className="flex items-center gap-2 text-xs font-medium text-gray-600">
-                                        <Star className="h-3 w-3 fill-purple-600 text-purple-600" />{' '}
-                                        Real-time stamp tracking
-                                    </li>
-                                </ul>
-                            </article>
-                        </div>
-                    </div>
-                </section>
-
-                {/* How It Works Section */}
-                <section
-                    id="how-it-works"
-                    className="relative z-10 bg-white px-4 py-16 sm:px-6 sm:py-20 lg:py-28"
-                >
-                    <div className="mx-auto max-w-7xl">
-                        {/* Header */}
-                        <div className="mb-12 text-center sm:mb-16 lg:mb-20">
-                            <h2
-                                className="mb-4 text-3xl font-bold sm:mb-6 sm:text-4xl lg:text-5xl"
-                                style={{ color: '#F4B942' }} // Purple from image
-                            >
-                                How It Works
-                            </h2>
-                            <p className="mx-auto max-w-3xl px-4 text-base text-gray-600 sm:text-lg lg:text-xl">
-                                Get started in minutes with our simple
-                                three-step process
-                            </p>
-                        </div>
-
-                        {/* Steps Horizontal Grid */}
-                        <div className="relative grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-8">
-                            {steps.map((step, index) => (
-                                <div
-                                    key={index}
-                                    className="relative flex flex-col items-center text-center"
-                                >
-                                    {/* Icon Box - Using the organic shape from the screenshot */}
-                                    <div
-                                        className="relative mb-8 flex h-20 w-20 items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110 sm:h-24 sm:w-24"
-                                        style={{
-                                            backgroundColor: '#F4B942',
-                                            borderRadius:
-                                                '30% 70% 70% 30% / 30% 30% 70% 70%',
-                                        }}
-                                    >
-                                        {step.icon}
-                                    </div>
-
-                                    {/* Text Content */}
-                                    <h3
-                                        className="mb-3 text-xl font-bold sm:text-2xl"
-                                        style={{ color: '#F4B942' }}
-                                    >
-                                        {step.title}
-                                    </h3>
-                                    <p className="text-sm leading-relaxed text-gray-600 sm:text-base">
-                                        {step.desc}
-                                    </p>
-
-                                    {/* Curved Connector Arrows (Hidden on mobile) */}
-                                    {index < 2 && (
-                                        <div className="absolute top-0 left-[65%] hidden w-full md:block">
-                                            <svg
-                                                width="100%"
-                                                height="50"
-                                                viewBox="0 0 100 40"
-                                                fill="none"
-                                                className="opacity-40"
-                                            >
-                                                <path
-                                                    d="M0 20C25 5 75 5 100 20"
-                                                    stroke="#94a3b8"
-                                                    strokeWidth="2"
-                                                    strokeDasharray="6 6"
-                                                />
-                                                <polygon
-                                                    points="98,20 90,15 91,20 90,25"
-                                                    fill="#94a3b8"
-                                                />
-                                            </svg>
                                         </div>
                                     )}
                                 </div>
                             ))}
                         </div>
 
-                        {/* Updated CTA Button */}
-                        <div className="mt-16 flex justify-center">
-                            <div
-                                className="group flex w-full cursor-pointer items-center justify-center rounded-full py-3 text-base font-semibold shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:w-auto sm:px-10 sm:py-4 sm:text-lg"
-                                style={{ backgroundColor: '#F4B942' }}
-                            >
-                                <a
-                                    href="/documentation"
-                                    target="_blank"
-                                    className="text-white"
-                                >
-                                    Full guide
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* PRICING SECTION */}
-                <section
-                    id="pricing"
-                    className="relative z-10 bg-primary/10 px-4 py-16 sm:px-6 sm:py-20 lg:py-28"
-                >
-                    <div className="mx-auto max-w-7xl">
-                        <div className="mb-12 text-center sm:mb-16">
-                            <h2 className="mb-4 text-3xl font-bold text-black sm:text-4xl lg:text-5xl">
-                                Simple, Transparent Pricing
-                            </h2>
-                            <p className="mx-auto max-w-2xl text-base text-black/70 sm:text-lg">
-                                Start now for free.
-                            </p>
+                        <div className="hidden items-center gap-3 lg:flex">
+                            <AuthMenu type="signIn" variant="secondary" />
+                            <AuthMenu type="signUp" variant="primary" />
                         </div>
 
-                        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:mx-auto lg:max-w-5xl">
-                            {/* Free Plan (Starter) */}
-                            <div className="flex flex-col rounded-3xl border border-gray-200 bg-white p-8 shadow-sm transition-all hover:shadow-md">
-                                <div className="mb-8">
-                                    <h3 className="text-xl font-bold text-gray-900">
-                                        Starter
-                                    </h3>
-                                    <div className="mt-4 flex items-baseline">
-                                        <span className="text-4xl font-extrabold tracking-tight text-gray-900">
-                                            ₱0
-                                        </span>
-                                        <span className="ml-1 text-xl font-semibold text-gray-500">
-                                            /forever
-                                        </span>
-                                    </div>
-                                    <p className="mt-2 text-sm text-gray-500">
-                                        Perfect for small shops starting out.
-                                    </p>
+                        <button
+                            type="button"
+                            aria-label="Toggle navigation"
+                            onClick={() => {
+                                setMobileOpen((open) => !open);
+                                setMobileDropdownOpen(null);
+                            }}
+                            className="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 lg:hidden"
+                        >
+                            {mobileOpen ? (
+                                <X className="h-5 w-5" />
+                            ) : (
+                                <Menu className="h-5 w-5" />
+                            )}
+                        </button>
+                    </nav>
+
+                    {mobileOpen && (
+                        <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-xl lg:hidden">
+                            <div className="mx-auto flex max-w-7xl flex-col gap-4">
+                                {navItems.map((item) =>
+                                    item.hasDropdown ? (
+                                        <div key={item.label}>
+                                            <button
+                                                type="button"
+                                                aria-expanded={
+                                                    mobileDropdownOpen ===
+                                                    item.label
+                                                }
+                                                onClick={() =>
+                                                    setMobileDropdownOpen(
+                                                        (open) =>
+                                                            open === item.label
+                                                                ? null
+                                                                : item.label,
+                                                    )
+                                                }
+                                                className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-left text-sm font-semibold text-slate-700"
+                                            >
+                                                {item.label}
+                                                <ChevronDown
+                                                    className={`h-4 w-4 transition ${
+                                                        mobileDropdownOpen ===
+                                                        item.label
+                                                            ? 'rotate-180'
+                                                            : ''
+                                                    }`}
+                                                />
+                                            </button>
+
+                                            {mobileDropdownOpen ===
+                                                item.label && (
+                                                <div className="mt-2 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-2">
+                                                    {navDropdownLinks[
+                                                        item.label
+                                                    ].map((link) => (
+                                                        <a
+                                                            key={link.label}
+                                                            href={link.href}
+                                                            onClick={() =>
+                                                                setMobileOpen(
+                                                                    false,
+                                                                )
+                                                            }
+                                                            className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:text-primary"
+                                                        >
+                                                            {link.label}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <a
+                                            key={item.label}
+                                            href={item.href}
+                                            onClick={() =>
+                                                setMobileOpen(false)
+                                            }
+                                            className="flex items-center justify-between rounded-xl px-2 py-2 text-sm font-semibold text-slate-700"
+                                        >
+                                            {item.label}
+                                        </a>
+                                    ),
+                                )}
+                                <div className="grid gap-3 pt-2 sm:grid-cols-2">
+                                    {authChoices.map((choice) => (
+                                        <div
+                                            key={choice.label}
+                                            className="rounded-2xl border border-slate-100 bg-slate-50 p-3"
+                                        >
+                                            <p className="mb-2 text-xs font-bold text-slate-500 uppercase">
+                                                {choice.label}
+                                            </p>
+                                            <div className="grid gap-2">
+                                                <ButtonLink
+                                                    href={choice.signIn}
+                                                    variant="secondary"
+                                                    className="w-full py-2.5"
+                                                >
+                                                    Sign in
+                                                </ButtonLink>
+                                                <ButtonLink
+                                                    href={choice.signUp}
+                                                    className="w-full py-2.5"
+                                                >
+                                                    Sign up
+                                                </ButtonLink>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <ul className="mb-8 flex-1 space-y-4">
-                                    <li className="flex items-center gap-3 text-sm text-gray-600">
-                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                        Unlimited customers
-                                    </li>
-                                    <li className="flex items-center gap-3 text-sm text-gray-600">
-                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                        Unlimited stamps and rewards
-                                    </li>
-                                    <li className="flex items-center gap-3 text-sm text-gray-600">
-                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                        Full access to Customer Analytics
-                                    </li>
-                                    <li className="flex items-center gap-3 text-sm text-gray-600">
-                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                        Custom Card & QR Code Builder
-                                    </li>
-                                    <li className="flex items-center gap-3 text-sm text-gray-600">
-                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                        Dedicated Support (Email/Chat)
-                                    </li>
-                                </ul>
                                 <button
-                                    onClick={() => setLoginDialogOpen(true)}
-                                    className="w-full rounded-xl border-2 border-primary py-3 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-white"
+                                    type="button"
+                                    onClick={handleMobileDownload}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-blue-700 sm:hidden"
                                 >
-                                    Get Started
+                                    <Download className="h-4 w-4" />
+                                    Download App
                                 </button>
                             </div>
+                        </div>
+                    )}
+                </header>
 
-                            {/* Pro Plan only */}
-                            <div className="relative flex flex-col rounded-3xl border-2 border-primary bg-white p-8 shadow-xl transition-all hover:scale-[1.02]">
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-bold text-white">
-                                    FOR GROWING BRANDS
+                <Dialog
+                    open={dashboardDialogOpen}
+                    onOpenChange={setDashboardDialogOpen}
+                >
+                    <DialogContent className="rounded-3xl border-slate-100 p-6 sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="text-center text-2xl font-bold text-slate-950">
+                                Open your dashboard
+                            </DialogTitle>
+                            <DialogDescription className="text-center text-slate-500">
+                                Choose the account type you want to continue
+                                with.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => handleDashboardChoice('business')}
+                                className="group rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                                        <Store className="h-6 w-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-slate-950">
+                                            Business Login
+                                        </h3>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            Manage cards, stamps, rewards, and
+                                            customers.
+                                        </p>
+                                    </div>
+                                    <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-primary" />
                                 </div>
-                                <div className="mb-8">
-                                    <h3 className="text-xl font-bold text-gray-900">
-                                        Pro
-                                    </h3>
-                                    <div className="mt-4 flex items-baseline">
-                                        <span className="text-4xl font-extrabold tracking-tight text-gray-900">
-                                            ₱99
-                                        </span>
-                                        <span className="ml-1 text-xl font-semibold text-gray-500">
-                                            /month
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => handleDashboardChoice('customer')}
+                                className="group rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                                        <Users className="h-6 w-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-slate-950">
+                                            Customer Login
+                                        </h3>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            View stamps, rewards, and loyalty
+                                            progress.
+                                        </p>
+                                    </div>
+                                    <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-primary" />
+                                </div>
+                            </button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                <section className="relative pt-32 pb-12 sm:pt-36 lg:pt-40">
+                    <div className="mx-auto max-w-4xl px-5 text-center">
+                        <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold shadow-sm">
+                            <Sparkles className="h-3.5 w-3.5 text-primary" />
+                            Free digital loyalty cards are live!
+                        </div>
+                        <h1 className="mx-auto max-w-2xl text-4xl leading-[1.04] font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+                            Loyalty that keeps{' '}
+                            <span className="text-primary">customers</span>
+                            <br /> coming{' '}
+                            <span className="text-primary">back</span>
+                        </h1>
+                        <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-800 sm:text-[16px]">
+                            Give customers a reason to come back with QR stamp
+                            cards, instant rewards, staff tools, and loyalty
+                            analytics built for local businesses.
+                        </p>
+                        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                            <button
+                                type="button"
+                                onClick={handleDashboardClick}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:text-primary"
+                            >
+                                <BarChart3 className="h-4 w-4 text-primary" />
+                                View Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="relative mt-0 bg-gradient-to-b from-white via-blue-50 to-white pt-16 pb-16 sm:-mt-10 sm:pt-10 sm:pb-24">
+                    <div className="hero-stage pointer-events-none absolute inset-x-0 top-0 overflow-hidden">
+                        <div
+                            className="hero-transform-field"
+                            aria-hidden="true"
+                        >
+                            {heroLanes.map((item) => (
+                                <HeroTransformCard
+                                    key={`${item.card.name}-${item.delay}`}
+                                    item={item}
+                                />
+                            ))}
+                        </div>
+
+                        <svg
+                            viewBox="0 0 1440 900"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="hero-mountain absolute bottom-0 left-1/2 -translate-x-1/2"
+                            aria-hidden="true"
+                        >
+                            <defs>
+                                <linearGradient
+                                    id="stampbayan-mountain"
+                                    x1="720"
+                                    x2="720"
+                                    y1="0"
+                                    y2="900"
+                                    gradientUnits="userSpaceOnUse"
+                                >
+                                    <stop
+                                        offset="0"
+                                        stopColor="#f4b942"
+                                        stopOpacity="0"
+                                    />
+                                    <stop
+                                        offset="0.3"
+                                        stopColor="#f4b942"
+                                        stopOpacity="1"
+                                    />
+                                    <stop
+                                        offset="0.7"
+                                        stopColor="#f4b942"
+                                        stopOpacity="1"
+                                    />
+                                    <stop
+                                        offset="1"
+                                        stopColor="#f4b942"
+                                        stopOpacity="0"
+                                    />
+                                </linearGradient>
+                            </defs>
+                            <path
+                                d="M712 0 L712 150 C712 600 550 680 -200 750 L-200 900 L1640 900 L1640 750 C890 680 728 600 728 150 L728 0 Z"
+                                fill="url(#stampbayan-mountain)"
+                                stroke="none"
+                            />
+                        </svg>
+
+                        <div
+                            className="absolute left-1/2 -translate-x-1/2"
+                            style={{ top: '180px' }}
+                        >
+                            <img
+                                src={MainLogo}
+                                alt="StampBayan Logo"
+                                className="h-14 w-36"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="relative mx-auto mt-56 max-w-7xl px-5 pt-52 text-center text-white sm:mt-72 sm:pt-64 lg:mt-85 lg:pt-72">
+                        <h2 className="text-3xl font-normal tracking-tight sm:text-4xl lg:text-5xl">
+                            StampBayan platform
+                        </h2>
+                        <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-blue-50">
+                            Everything a local business needs to run QR stamp
+                            cards, manage rewards, support staff, and understand
+                            customer visits.
+                        </p>
+                        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+                            {toolIcons.map((item, index) => (
+                                <ToolIcon
+                                    key={`${item.color}-${index}`}
+                                    item={item}
+                                    index={index}
+                                />
+                            ))}
+                        </div>
+                        <div
+                            id="dashboard"
+                            className="mt-10 rounded-2xl border border-white/60 bg-white p-4 text-left text-slate-950 shadow-2xl shadow-blue-200/80 sm:rounded-3xl sm:p-5 lg:mt-12 lg:p-10"
+                        >
+                            <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
+                                <div className="self-center">
+                                    <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-red-500 text-white">
+                                        <BarChart3 className="h-6 w-6" />
+                                    </div>
+                                    <div className="mb-4 flex items-center gap-2">
+                                        <h3 className="text-xl font-bold">
+                                            Business Dashboard
+                                        </h3>
+                                        <span className="rounded-full border border-red-100 bg-red-50 px-2 py-1 text-[10px] font-bold text-red-500">
+                                            LIVE
                                         </span>
                                     </div>
-                                    <p className="mt-2 text-sm text-gray-500">
-                                        Everything in Free, plus branding tools.
+                                    <p className="text-sm leading-6 text-slate-600">
+                                        Monitor total customers, new signups,
+                                        stamps given, traffic by day, and visit
+                                        frequency from a clean dashboard with
+                                        sidebar navigation for every tool.
+                                    </p>
+                                    <ButtonLink
+                                        href="/login"
+                                        className="mt-5 px-4 py-2.5"
+                                    >
+                                        Open dashboard
+                                        <ArrowRight className="h-4 w-4" />
+                                    </ButtonLink>
+                                </div>
+                                <DashboardMockup />
+                            </div>
+                            <div className="mt-8 grid gap-5 md:grid-cols-3">
+                                {[
+                                    'Track customer activity',
+                                    'Issue stamps faster',
+                                    'Manage rewards clearly',
+                                ].map((title) => (
+                                    <div key={title}>
+                                        <h4 className="font-semibold">
+                                            {title}
+                                        </h4>
+                                        <p className="mt-2 text-sm leading-6 text-slate-500">
+                                            Keep daily operations, customer
+                                            progress, and reward redemptions in
+                                            one calm workspace.
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section
+                    id="business-map"
+                    className="relative overflow-hidden px-5 py-16 sm:py-20 lg:py-24"
+                >
+                    <svg
+                        viewBox="0 0 1440 900"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="hero-mountain absolute top-0 left-1/2 -translate-x-1/2 rotate-180"
+                        aria-hidden="true"
+                    >
+                        <defs>
+                            <linearGradient
+                                id="stampbayan-mountain"
+                                x1="720"
+                                x2="720"
+                                y1="0"
+                                y2="900"
+                                gradientUnits="userSpaceOnUse"
+                            >
+                                <stop
+                                    offset="0"
+                                    stopColor="#f4b942"
+                                    stopOpacity="0"
+                                />
+                                <stop
+                                    offset="0.3"
+                                    stopColor="#f4b942"
+                                    stopOpacity="1"
+                                />
+                                <stop
+                                    offset="0.7"
+                                    stopColor="#f4b942"
+                                    stopOpacity="1"
+                                />
+                                <stop
+                                    offset="1"
+                                    stopColor="#f4b942"
+                                    stopOpacity="0"
+                                />
+                            </linearGradient>
+                        </defs>
+                        <path
+                            d="M712 0 L712 150 C712 600 550 680 -200 750 L-200 900 L1640 900 L1640 750 C890 680 728 600 728 150 L728 0 Z"
+                            fill="url(#stampbayan-mountain)"
+                            stroke="none"
+                        />
+                    </svg>
+                    <div className="absolute inset-x-0 top-8 mx-auto h-72 max-w-5xl bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.24),transparent_68%)] blur-3xl sm:h-[520px]" />
+                    <div className="relative mx-auto max-w-3xl text-center">
+                        <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+                            Growing across the Philippines
+                        </h2>
+                        <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/90">
+                            See where local businesses are using StampBayan to
+                            ditch paper cards, reward loyal customers, and drive
+                            repeat visits.
+                        </p>
+                    </div>
+
+                    <div className="relative mx-auto mt-12 w-full max-w-lg sm:mt-20">
+                        <StampBayanMap />
+                    </div>
+                </section>
+
+                {/* <section className="relative px-5 py-24">
+                    <div className="absolute inset-x-0 top-8 mx-auto h-[520px] max-w-5xl bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.24),transparent_68%)] blur-3xl" />
+                    <div className="relative mx-auto max-w-3xl text-center">
+                        <h2 className="text-2xl font-semibold tracking-tight sm:text-5xl">
+                            QR scanning made simple
+                        </h2>
+                        <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-600">
+                            Staff can scan, issue, and validate stamps in a few
+                            taps while customers keep their loyalty progress on
+                            their phones.
+                        </p>
+                        <ButtonLink
+                            href="/documentation"
+                            target="_blank"
+                            className="mt-7 px-5 py-2.5"
+                        >
+                            Learn More
+                        </ButtonLink>
+
+                        <div className="mx-auto mt-12 max-w-2xl space-y-5 text-left">
+                            {[
+                                'Scan a customer QR code at the counter',
+                                'Issue one stamp after a completed purchase',
+                                'Redeem a free drink reward when the card is full',
+                                "Review today's busiest visit hours",
+                            ].map((prompt, index) => (
+                                <div
+                                    key={prompt}
+                                    className={`flex items-center gap-3 rounded-2xl px-5 py-4 text-sm transition ${index === 2 ? 'border border-blue-200 bg-white text-primary shadow-xl shadow-blue-100' : 'text-slate-400'}`}
+                                >
+                                    <span className="grid h-8 w-8 place-items-center rounded-full bg-white shadow-sm">
+                                        {index === 2 ? (
+                                            <Check className="h-4 w-4" />
+                                        ) : (
+                                            <Search className="h-4 w-4" />
+                                        )}
+                                    </span>
+                                    <span className="flex-1">{prompt}</span>
+                                    {index === 2 && (
+                                        <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-white">
+                                            <Send className="h-4 w-4" />
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section> */}
+
+                <section
+                    id="latest-articles"
+                    className="mx-auto max-w-6xl px-5 py-16 sm:py-20"
+                >
+                    <div className="mb-10">
+                        <div className="mb-4 inline-flex max-w-full flex-wrap rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold">
+                            StampBayan is ready for your shop
+                            <span className="ml-2 text-primary">
+                                Check what&apos;s new
+                            </span>
+                        </div>
+                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                            Perks of StampBayan
+                        </h2>
+                        <p className="mt-4 max-w-xl text-sm leading-6 text-slate-600">
+                            Built for Philippine businesses that want a cleaner,
+                            faster way to reward loyal customers.
+                        </p>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {perks.map((perk) => {
+                            const Icon = perk.icon;
+                            const Visual = perk.visual;
+                            return (
+                                <article
+                                    key={perk.title}
+                                    className="rounded-2xl bg-slate-50 p-5 transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-2xl hover:shadow-blue-100 sm:rounded-3xl sm:p-7"
+                                >
+                                    <div className="mb-3 flex items-center gap-2">
+                                        <span className="grid h-6 w-6 place-items-center rounded-full bg-primary text-white">
+                                            <Icon className="h-3.5 w-3.5" />
+                                        </span>
+                                        <h3 className="font-bold">
+                                            {perk.title}
+                                        </h3>
+                                    </div>
+                                    <p className="text-sm leading-6 text-slate-600 md:min-h-20">
+                                        {perk.body}
+                                    </p>
+                                    <div className="mt-6 grid h-36 place-items-center rounded-2xl bg-gradient-to-b from-white to-blue-50 sm:mt-8 sm:h-44 sm:rounded-3xl">
+                                        <img
+                                            src={Visual}
+                                            alt=""
+                                            className="h-20 w-20 text-blue-500 opacity-80 sm:h-24 sm:w-24"
+                                        />
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+                </section>
+
+                <section
+                    id="mobile-app"
+                    className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white px-5 py-16 text-center sm:py-24"
+                >
+                    <div className="absolute inset-x-0 top-0 h-28 rounded-b-[50%] bg-white" />
+                    <div className="relative mx-auto max-w-3xl">
+                        <span className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold">
+                            894+ Customers are using StampBayan
+                        </span>
+                        <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-5xl">
+                            Mobile-ready customer experience
+                        </h2>
+                        <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-600">
+                            Customers can open their stamp card from their
+                            phone, check progress, and see available rewards
+                            without downloading a native app.
+                        </p>
+                        <ButtonLink href="#" className="mt-7">
+                            View customer portal
+                            <ArrowRight className="h-4 w-4" />
+                        </ButtonLink>
+                        <div className="mx-auto mt-10 grid w-full max-w-xs place-items-center rounded-[2rem] shadow-2xl shadow-blue-200 sm:mt-14 sm:max-w-md">
+                            <img
+                                src={Phone}
+                                alt="StampBayan customer mobile portal showing a digital stamp card with 5 out of 10 stamps collected and a free drink reward available for redemption."
+                                className="h-64 w-auto sm:h-80"
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                <section className="mx-auto max-w-6xl px-5 py-16 sm:py-20">
+                    <div className="mb-8 inline-flex max-w-full flex-wrap gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold sm:gap-3">
+                        <span>5/5 Rating</span>
+                        <span className="text-primary">894+ active users</span>
+                    </div>
+                    <h2 className="mb-8 text-3xl font-bold tracking-tight sm:text-4xl">
+                        Browse our latest articles
+                    </h2>
+                    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10">
+                        <a
+                            href={articles[0].url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-2xl bg-slate-100 p-4 transition hover:-translate-y-1 hover:shadow-xl sm:rounded-3xl sm:p-5"
+                        >
+                            <div
+                                style={{ backgroundImage: `url(${Article})` }}
+                                className="grid min-h-56 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-blue-900 bg-cover bg-center text-white sm:h-72"
+                            >
+                                <div className="bg-blue-600/95 px-5 py-4 text-center sm:px-8 sm:py-5">
+                                    <p className="text-lg font-bold sm:text-2xl">
+                                        {articles[0].title}
                                     </p>
                                 </div>
-                                <ul className="mb-8 flex-1 space-y-4">
-                                    <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                                        <Sparkles className="h-5 w-5 text-primary" />
-                                        Custom landing page
-                                    </li>
-                                    <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                                        <Globe className="h-5 w-5 text-primary" />
-                                        yourbusiness.stampbayan.com
-                                    </li>
-                                    <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                                        <Palette className="h-5 w-5 text-primary" />
-                                        Show your logo
-                                    </li>
-                                    <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                                        <Headphones className="h-5 w-5 text-primary" />
-                                        Priority support
-                                    </li>
-                                    <hr className="my-4 border-gray-100" />
-                                    <li className="flex items-center gap-3 text-sm text-gray-500 italic">
-                                        <CheckCircle2 className="h-4 w-4 text-gray-400" />
-                                        Includes all Free features
-                                    </li>
-                                    <li className="flex cursor-pointer items-center gap-3 text-sm text-blue-500 italic underline">
-                                        <CheckCircle2 className="h-4 w-4 text-blue-400" />
-                                        <a href="https://tinybubbles2dartcafe.stampbayan.com/">
-                                            Sample Website
-                                        </a>
-                                    </li>
-                                </ul>
-                                <a
-                                    href="https://www.facebook.com/profile.php?id=61584319949414"
-                                    target="_blank"
-                                    className="w-full rounded-xl bg-primary py-3 text-center text-sm font-bold text-white transition-opacity hover:opacity-90"
-                                >
-                                    Inquire Now
-                                </a>
                             </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* FAQ Section */}
-                <section
-                    id="faq"
-                    className="relative overflow-hidden bg-slate-50 py-16 sm:py-24"
-                >
-                    {/* Subtle Background Glow for Modern Aesthetic */}
-                    <div className="absolute top-0 left-1/2 -z-10 h-[400px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-[120px]" />
-
-                    <div className="mx-auto max-w-3xl px-6">
-                        <div className="mb-16 text-center">
-                            <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-                                Questions? We have answers.
-                            </h2>
-                            <p className="mx-auto max-w-lg text-lg text-slate-600">
-                                Everything you need to know about StampBayan and
-                                how digital loyalty works.
+                            <p className="mt-6 text-xs text-slate-500">
+                                {articles[0].date} • {articles[0].read}
                             </p>
-                        </div>
+                            <h3 className="mt-3 text-lg font-bold sm:text-xl">
+                                {articles[0].title}
+                            </h3>
+                            <p className="mt-4 text-sm text-slate-600">
+                                Learn how QR loyalty cards make repeat visits
+                                easier for customers and staff.
+                            </p>
+                            <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                                Read Article <ArrowRight className="h-4 w-4" />
+                            </span>
+                        </a>
 
-                        <Accordion
-                            type="single"
-                            collapsible
-                            className="space-y-4"
-                        >
-                            {[
-                                {
-                                    id: 'item-1',
-                                    q: 'What is StampBayan?',
-                                    a: "StampBayan is a modern Customer Loyalty Card system where businesses can reward their customers for coming back. Say goodbye to paper punch cards and hello to a digital solution that's easy for both you and your customers.",
-                                },
-                                {
-                                    id: 'item-2',
-                                    q: 'What is your goal?',
-                                    a: "Our goal is to bridge the digital gap for local businesses. We want to show that having a professional loyalty system doesn't have to be expensive—it's actually a powerful tool to help you grow and thrive.",
-                                },
-                                {
-                                    id: 'item-3',
-                                    q: 'How will this help my business?',
-                                    a: 'Increasing customer retention by just 5% can boost profits by up to 95%. Loyal customers spend 67% more than new ones. With StampBayan, you turn one-time visitors into lifelong patrons.',
-                                },
-                                {
-                                    id: 'item-4',
-                                    q: 'What is Customer Analytics?',
-                                    a: (
-                                        <div className="space-y-3">
-                                            <p>
-                                                Our analytics give you a
-                                                bird's-eye view of your business
-                                                performance:
-                                            </p>
-                                            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                                {[
-                                                    'Customer traffic by day',
-                                                    'Visit frequency',
-                                                    'New customer count',
-                                                    'Peak hours and trends',
-                                                ].map((item) => (
-                                                    <li
-                                                        key={item}
-                                                        className="flex items-center text-sm text-slate-600"
-                                                    >
-                                                        <span className="mr-2 h-1.5 w-1.5 rounded-full bg-primary" />
-                                                        {item}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    ),
-                                },
-                                {
-                                    id: 'item-5',
-                                    q: 'What makes StampBayan different?',
-                                    a: "We believe small businesses deserve enterprise-grade tools. We've stripped away the complexity and high costs of traditional systems, delivering a straightforward solution focused on real growth.",
-                                },
-                            ].map((item) => (
-                                <AccordionItem
-                                    key={item.id}
-                                    value={item.id}
-                                    className="group rounded-2xl border border-slate-200 bg-white px-6 shadow-sm transition-all duration-300 data-[state=open]:border-primary/50 data-[state=open]:shadow-md data-[state=open]:shadow-primary/5"
+                        <div className="space-y-6 sm:space-y-8">
+                            {articles.slice(1).map((article) => (
+                                <a
+                                    key={article.url}
+                                    href={article.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block transition hover:opacity-80"
                                 >
-                                    <AccordionTrigger className="py-6 text-left text-lg font-semibold text-slate-900 hover:text-primary hover:no-underline sm:text-xl">
-                                        {item.q}
-                                    </AccordionTrigger>
-                                    <AccordionContent className="pb-6 text-base leading-relaxed text-slate-600 sm:text-lg">
-                                        {item.a}
-                                    </AccordionContent>
-                                </AccordionItem>
+                                    <p className="text-xs text-slate-500">
+                                        {article.date} • {article.read}
+                                    </p>
+                                    <h3 className="mt-2 text-base font-bold sm:text-lg">
+                                        {article.title}
+                                    </h3>
+                                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                                        Learn how to improve customer retention,
+                                        speed up counter workflows, and reward
+                                        loyal visitors more consistently.
+                                    </p>
+                                </a>
                             ))}
-                        </Accordion>
+                        </div>
+                    </div>
+                </section>
+                <section className="overflow-hidden px-5 pt-12 pb-6 text-center sm:pt-15 sm:pb-8 lg:pb-10">
+                    <div className="mx-auto mb-8 grid max-w-sm grid-cols-5 justify-items-center gap-3 sm:mb-10 sm:flex sm:h-20 sm:max-w-3xl sm:items-end sm:justify-center">
+                        {toolIcons.map((item, index) => {
+                            const total = toolIcons.length;
+                            const mid = (total - 1) / 2;
+                            const distanceFromCenter = Math.abs(index - mid);
+
+                            const translateY =
+                                Math.pow(distanceFromCenter, 2) * 1.8;
+
+                            return (
+                                <div
+                                    key={`launch-${item.color}-${index}`}
+                                    className="sm:[transform:var(--launch-offset)]"
+                                    style={
+                                        {
+                                            '--launch-offset': `translateY(${translateY}px)`,
+                                        } as React.CSSProperties
+                                    }
+                                >
+                                    <ToolIcon item={item} index={index} />
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* 2. Clean, unwarped, professional typography */}
+                    <div className="relative z-10 mx-auto max-w-3xl">
+                        <h2 className="text-2xl leading-[1.15] font-normal tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+                            Launch your digital <br className="sm:hidden" />{' '}
+                            loyalty program today
+                        </h2>
+
+                        <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600">
+                            Create stamp cards, invite customers, issue rewards,
+                            and <br className="hidden md:inline" />
+                            track loyalty activity from one modern system.
+                        </p>
                     </div>
                 </section>
 
-                {/* Footer - The approved dark footer */}
-                <footer className="bg-primary px-4 py-12 sm:px-6">
-                    <div className="mx-auto grid max-w-7xl gap-8 text-sm text-white/70 md:grid-cols-4">
-                        <div className="md:col-span-1">
-                            <img
-                                src={LOGO}
-                                alt="StampBayan Logo"
-                                className="mb-4 h-8"
-                            />
-                            <p className="mb-4">
-                                Digital Loyalty for Filipino Businesses.
-                            </p>
-                            <div className="flex gap-4">
-                                <a
-                                    href="https://www.facebook.com/profile.php?id=61584319949414"
-                                    target="_blank"
-                                >
-                                    <Facebook className="h-5 w-5 cursor-pointer transition hover:text-white" />
-                                </a>
-                                <Instagram className="h-5 w-5 cursor-pointer transition hover:text-white" />
+                <footer className="relative -mt-6 overflow-hidden bg-white px-5 pt-40 pb-10 text-white sm:-mt-8 sm:pt-48 lg:-mt-10 lg:pt-56">
+                    <svg
+                        viewBox="0 0 1440 900"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="footer-wave absolute top-0 left-1/2 h-80 -translate-x-1/2 sm:h-96 lg:h-[28rem]"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M 0 600 Q 720 100 1440 600 L 1440 900 L 0 900 Z"
+                            className="fill-blue-600"
+                            stroke="none"
+                        />
+                    </svg>
+                    <div className="absolute inset-x-0 top-44 bottom-0 bg-blue-600 sm:top-52 lg:top-60" />
+                    <div className="relative mx-auto max-w-6xl">
+                        <div className="text-center">
+                            <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-[1.5rem] bg-white/20 text-white sm:h-24 sm:w-24 sm:rounded-[2rem]">
+                                <Box className="h-10 w-10 sm:h-14 sm:w-14" />
                             </div>
+                            <h2 className="text-3xl font-semibold sm:text-5xl">
+                                Ready to begin?
+                            </h2>
+                            <p className="mt-3 text-sm text-blue-50">
+                                Create your free account and start rewarding
+                                repeat customers today.
+                            </p>
+                            <ButtonLink
+                                href="/register"
+                                variant="secondary"
+                                className="mt-6"
+                            >
+                                Create Account{' '}
+                                <ArrowRight className="h-4 w-4" />
+                            </ButtonLink>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:col-span-3">
-                            <div>
-                                <h4 className="mb-3 font-bold text-white">
-                                    Navigate
-                                </h4>
-                                <ul>
-                                    <li>
-                                        <a
-                                            href="#benefits"
-                                            onClick={(e) =>
-                                                scrollToSection(e, '#benefits')
-                                            }
-                                            className="hover:text-white"
-                                        >
-                                            Benefits
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a
-                                            href="#features"
-                                            onClick={(e) =>
-                                                scrollToSection(e, '#features')
-                                            }
-                                            className="hover:text-white"
-                                        >
-                                            Features
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a
-                                            href="#pricing"
-                                            onClick={(e) =>
-                                                scrollToSection(e, '#pricing')
-                                            }
-                                            className="hover:text-white"
-                                        >
-                                            Pricing
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a
-                                            href="#faq"
-                                            onClick={(e) =>
-                                                scrollToSection(e, '#faq')
-                                            }
-                                            className="hover:text-white"
-                                        >
-                                            FAQ
-                                        </a>
-                                    </li>
-                                </ul>
+                        <div className="mt-14 grid gap-8 border-b border-white/20 pb-10 sm:mt-20 sm:grid-cols-2 md:grid-cols-5 md:gap-10">
+                            <div className="md:col-span-2">
+                                <Logo />
+                                <p className="mt-5 max-w-xs text-sm leading-6 text-blue-50">
+                                    Replace paper punch cards with QR scanning,
+                                    customer dashboards, and simple reward
+                                    management.
+                                </p>
                             </div>
-                            <div>
-                                <h4 className="mb-3 font-bold text-white">
-                                    Contact
-                                </h4>
-                                <p className="mb-2 flex items-center gap-2">
-                                    <Mail className="h-4 w-4 text-white/50" />{' '}
-                                    stampbayan@gmail.com
-                                </p>
-                                <p className="flex items-center gap-2">
-                                    <Phone className="h-4 w-4 text-white/50" />{' '}
-                                    +63 9266887267
-                                </p>
+                            {footerLinks.map((group) => (
+                                <div key={group.title}>
+                                    <h3 className="font-semibold">
+                                        {group.title}
+                                    </h3>
+                                    <div className="mt-4 space-y-3">
+                                        {group.links.map((link) => (
+                                            <a
+                                                key={link.label}
+                                                href={link.href}
+                                                className="block text-sm text-blue-50 transition hover:text-white"
+                                            >
+                                                {link.label}
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-8 flex flex-col items-center justify-between gap-5 text-center text-sm text-blue-50 md:flex-row md:text-left">
+                            <p>
+                                Copyright 2026 StampBayan. All Rights Reserved.
+                            </p>
+                            <div className="flex flex-wrap items-center justify-center gap-5">
+                                <Instagram className="h-4 w-4" />
+                                <Youtube className="h-4 w-4" />
+                                <a href="#">Privacy Policy</a>
+                                <a href="#">Terms</a>
                             </div>
                         </div>
-                    </div>
-                    <div className="mt-12 border-t border-white/10 pt-6 text-center text-xs text-white/50">
-                        &copy; {new Date().getFullYear()} StampBayan. All rights
-                        reserved.
                     </div>
                 </footer>
 
-                {/* Floating Download Button */}
-                <button
-                    onClick={() => setDownloadDialogOpen(true)}
-                    className="fixed right-6 bottom-6 z-50 flex items-center gap-2 rounded-full bg-gradient-to-r from-primary/80 to-primary/90 px-6 py-3 text-white shadow-2xl transition-all hover:scale-110 lg:hidden"
-                >
-                    <Download className="h-5 w-5" />
-                    <span className="hidden font-semibold sm:inline">
-                        Download App
-                    </span>
-                </button>
-            </div>
-
-            {/* <button
-        onClick={() => setIsOpen(true)}
-        className="cursor-pointer fixed bottom-6 right-6 z-50 bg-primary hover:bg-primary/90 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110 group animate-bounce"
-        style={{
-          animation: 'bounce 2s infinite'
-        }}
-      >
-        <MessageSquare className="w-6 h-6" />
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-      </button> */}
-
-            {/* Download App Dialog */}
-            <Dialog
-                open={downloadDialogOpen}
-                onOpenChange={setDownloadDialogOpen}
-            >
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="text-center text-2xl font-bold">
-                            Download StampBayan
-                        </DialogTitle>
-                        <DialogDescription className="text-center">
-                            Choose your account type to download
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-4">
-                        {/* Customer App */}
-                        <button
-                            onClick={() => handleDownloadApp('customer')}
-                            className="group w-full rounded-xl border-2 border-gray-200 p-4 transition-all hover:border-green-500 hover:bg-green-50"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 group-hover:bg-green-500">
-                                    <svg
-                                        className="h-6 w-6 text-green-600 group-hover:text-white"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                        />
-                                    </svg>
-                                </div>
-                                <div className="flex-1 text-left">
-                                    <h3 className="font-bold">Customer App</h3>
-                                    <p className="text-sm text-gray-600">
-                                        Track rewards
-                                    </p>
-                                </div>
-                                <Download className="h-5 w-5" />
-                            </div>
-                        </button>
-
-                        {/* Business App */}
-                        <button
-                            onClick={() => handleDownloadApp('business')}
-                            className="group w-full rounded-xl border-2 border-gray-200 p-4 transition-all hover:border-blue-500 hover:bg-blue-50"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 group-hover:bg-blue-500">
-                                    <svg
-                                        className="h-6 w-6 text-blue-600 group-hover:text-white"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                                        />
-                                    </svg>
-                                </div>
-                                <div className="flex-1 text-left">
-                                    <h3 className="font-bold">Business App</h3>
-                                    <p className="text-sm text-gray-600">
-                                        Manage program
-                                    </p>
-                                </div>
-                                <Download className="h-5 w-5" />
-                            </div>
-                        </button>
-
-                        {/* iOS Instructions */}
-                        {isIOS && (
-                            <div className="rounded-xl bg-blue-50 p-4">
-                                <div className="mb-2 font-semibold text-blue-900">
-                                    📱 iOS Installation:
-                                </div>
-                                <ol className="space-y-1 text-sm text-blue-800">
-                                    <li>1. Tap Share button in Safari</li>
-                                    <li>2. Tap "Add to Home Screen"</li>
-                                    <li>3. Name it "StampBayan" and tap Add</li>
-                                </ol>
-                            </div>
-                        )}
-
-                        {/* Android Instructions */}
-                        {isAndroid && !deferredPrompt && (
-                            <div className="rounded-xl bg-green-50 p-4">
-                                <div className="mb-2 font-semibold text-green-900">
-                                    📱 Chrome Installation:
-                                </div>
-                                <ol className="space-y-1 text-sm text-green-800">
-                                    <li>1. Tap menu (⋮) in Chrome</li>
-                                    <li>2. Tap "Add to Home screen"</li>
-                                    <li>3. Name it "StampBayan"</li>
-                                </ol>
-                            </div>
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-
-            <style>{`
-        @keyframes bounce {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-      `}</style>
+            </main>
         </>
     );
 }

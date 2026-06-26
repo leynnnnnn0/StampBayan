@@ -52,10 +52,10 @@ class DashboardController extends Controller
         $stampsByDayOfWeek = $business->stampCodes()
             ->whereNotNull('used_at')
             ->where('used_at', '>=', now()->subDays(30))
-            ->select(DB::raw('DAYNAME(used_at) as day_name, COUNT(*) as stamps'))
-            ->groupBy('day_name')
+            ->select('used_at')
             ->get()
-            ->mapWithKeys(fn($item) => [$item->day_name => $item->stamps]);
+            ->groupBy(fn($stamp) => \Illuminate\Support\Carbon::parse($stamp->used_at)->format('l'))
+            ->map(fn($stamps) => $stamps->count());
 
         $daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         $stampsByDay = collect($daysOfWeek)->map(function($day) use ($stampsByDayOfWeek) {

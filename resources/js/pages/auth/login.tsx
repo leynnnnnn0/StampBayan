@@ -10,7 +10,6 @@ import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import { Form, Head } from '@inertiajs/react';
-import Logo from '../../../images/mainLogo.png';
 interface LoginProps {
     status?: string;
     canResetPassword: boolean;

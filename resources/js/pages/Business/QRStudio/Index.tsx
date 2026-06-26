@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import ModuleHeading from "@/components/module-heading";
 import AppLayout from "@/layouts/app-layout";
-import { Head, router, useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
 import { toast } from 'sonner';
 
 interface QRCodeData {
@@ -32,14 +32,14 @@ interface IndexProps {
   errors?: Record<string, string>;
 }
 
-export default function Index({ qrUrl, qrCode, errors }: IndexProps) {
+export default function Index({ qrCode }: IndexProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(qrCode?.logo ? "/" + qrCode.logo : null);
   const [backgroundPreview, setBackgroundPreview] = useState<string | null>(qrCode?.background_image ? "/" + qrCode.background_image : null);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const backgroundInputRef = useRef<HTMLInputElement>(null);
 
-  const {post, data, setData, reset, processing } = useForm<QRCodeData>({
+  const {post, data, setData, reset, processing, errors } = useForm<QRCodeData>({
     heading: qrCode?.heading || 'Taylora',
     subheading: qrCode?.subheading || 'Join our loyalty program by scanning the QR code',
     backgroundColor: qrCode?.background_color || '#ffffff',
@@ -89,7 +89,7 @@ export default function Index({ qrUrl, qrCode, errors }: IndexProps) {
       onSuccess: () => {
         toast.success('QR Code settings saved successfully!')
       },
-      onError: (errors) => {
+      onError: () => {
        toast.error("An error occured while trying to generate.")
       }
     });
@@ -307,8 +307,8 @@ export default function Index({ qrUrl, qrCode, errors }: IndexProps) {
                         onChange={handleBackgroundUpload}
                         className="hidden"
                       />
-                      {errors?.background_image && (
-                        <p className="text-sm text-red-500">{errors.background_image}</p>
+                      {errors?.backgroundImage && (
+                        <p className="text-sm text-red-500">{errors.backgroundImage}</p>
                       )}
                       {backgroundPreview && (
                         <div className="mt-2 p-2 border rounded-lg bg-gray-50">
