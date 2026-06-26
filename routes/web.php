@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ProductAnalyticsController;
 use App\Http\Controllers\Business\StaffController;
 use App\Http\Controllers\Business\CardTempalateController;
 use App\Http\Controllers\Business\CustomerController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\ChatBotController;
 use App\Http\Controllers\Customer\CustomerAuthController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\DocumentationController;
+use App\Http\Controllers\ProductAnalyticsEventController;
 use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
 use App\Http\Controllers\Staff\StaffAuthController;
 use App\Http\Controllers\SuggestionController;
@@ -35,6 +37,9 @@ Route::post('/api/chat', [ChatBotController::class, 'chat'])->middleware('auth')
 
 Route::post('/suggestions', [SuggestionController::class, 'store'])->name('suggestions.store');
 
+Route::post('/product-analytics/events', [ProductAnalyticsEventController::class, 'store'])
+    ->name('product-analytics.events.store');
+
 Route::get('/', function () {
     return Inertia::render('welcome', [
         'canRegister' => Features::enabled(Features::registration()),
@@ -48,6 +53,11 @@ Route::get('/pricing', function () {
 Route::get('/documentation', [DocumentationController::class, 'index']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('admin')->group(function () {
+        Route::get('/product-analytics', [ProductAnalyticsController::class, 'index'])
+            ->name('admin.product-analytics');
+    });
+
     Route::prefix('business')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

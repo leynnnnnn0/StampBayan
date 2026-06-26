@@ -10,9 +10,9 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { AwardIcon, BookOpen, Code2Icon, IdCard, LayoutGrid, QrCodeIcon, StampIcon, StoreIcon, TicketIcon, Users2Icon } from 'lucide-react';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
+import { AwardIcon, BarChart3, BookOpen, Code2Icon, IdCard, LayoutGrid, QrCodeIcon, StampIcon, StoreIcon, TicketIcon, Users2Icon } from 'lucide-react';
 import LOGO from '../../images/mainLogo.png';
 
 const mainNavItems: NavItem[] = [
@@ -72,13 +72,26 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage<SharedData>().props;
+    const isAdmin = auth.user?.role === 'admin' || auth.user?.id === 1;
+    const navItems: NavItem[] = isAdmin
+        ? [
+            {
+                title: 'Product Analytics',
+                href: '/admin/product-analytics',
+                icon: BarChart3,
+            },
+            ...mainNavItems,
+        ]
+        : mainNavItems;
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href='/business/dashboard' prefetch>
+                            <Link href={isAdmin ? '/admin/product-analytics' : '/business/dashboard'} prefetch>
                                 <img src={LOGO} alt="logo" className='w-full' />
                             </Link>
                         </SidebarMenuButton>
@@ -87,7 +100,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={navItems} />
             </SidebarContent>
 
             <SidebarFooter>
