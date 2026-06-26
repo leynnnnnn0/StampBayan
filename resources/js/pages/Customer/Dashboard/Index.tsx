@@ -147,6 +147,20 @@ type ScanControls = {
     stop: () => void;
 };
 
+type CustomerDashboardSnapshot = {
+    cardTemplates: LoyaltyCard[];
+    stampCodes: StampCode[];
+    completedCards: CompletedCard[];
+    customerName: string;
+    perkClaims: PerkClaim[];
+    customer: Props['customer'];
+    customerQrPayload: string;
+    lastSyncedAt: string;
+};
+
+const CUSTOMER_DASHBOARD_CACHE_KEY = 'stampbayan_customer_dashboard';
+const CUSTOMER_SESSION_CACHE_KEY = 'stampbayan_customer_session';
+
 function completedCardStamps(card: CompletedCard): CompletedStamp[] {
     return typeof card.stamps_data === 'string'
         ? (JSON.parse(card.stamps_data) as CompletedStamp[])
@@ -154,14 +168,54 @@ function completedCardStamps(card: CompletedCard): CompletedStamp[] {
 }
 
 export default function Index({
-    cardTemplates,
-    stampCodes,
-    completedCards,
-    customerName,
-    perkClaims,
-    customer,
-    customerQrPayload,
+    cardTemplates: liveCardTemplates,
+    stampCodes: liveStampCodes,
+    completedCards: liveCompletedCards,
+    customerName: liveCustomerName,
+    perkClaims: livePerkClaims,
+    customer: liveCustomer,
+    customerQrPayload: liveCustomerQrPayload,
 }: Props) {
+    const readCachedSnapshot = (): CustomerDashboardSnapshot | null => {
+        if (typeof window === 'undefined') return null;
+
+        try {
+            const raw = window.localStorage.getItem(
+                CUSTOMER_DASHBOARD_CACHE_KEY,
+            );
+            return raw ? (JSON.parse(raw) as CustomerDashboardSnapshot) : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const [isOnline, setIsOnline] = useState(
+        typeof navigator === 'undefined' ? true : navigator.onLine,
+    );
+    const [cachedSnapshot, setCachedSnapshot] =
+        useState<CustomerDashboardSnapshot | null>(readCachedSnapshot);
+    const liveSnapshot: CustomerDashboardSnapshot = {
+        cardTemplates: liveCardTemplates,
+        stampCodes: liveStampCodes,
+        completedCards: liveCompletedCards,
+        customerName: liveCustomerName,
+        perkClaims: livePerkClaims,
+        customer: liveCustomer,
+        customerQrPayload: liveCustomerQrPayload,
+        lastSyncedAt: new Date().toISOString(),
+    };
+    const dashboardSnapshot =
+        !isOnline && cachedSnapshot ? cachedSnapshot : liveSnapshot;
+    const {
+        cardTemplates,
+        stampCodes,
+        completedCards,
+        customerName,
+        perkClaims,
+        customer,
+        customerQrPayload,
+    } = dashboardSnapshot;
+
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [activeTab, setActiveTab] = useState('home');
     const [recordDialogOpen, setRecordDialogOpen] = useState(false);
@@ -177,6 +231,53 @@ export default function Index({
         code: '',
         loyalty_card_id: cardTemplates[0]?.id || null,
     });
+
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isOnline) return;
+
+        const snapshot = liveSnapshot;
+
+        try {
+            window.localStorage.setItem(
+                CUSTOMER_DASHBOARD_CACHE_KEY,
+                JSON.stringify(snapshot),
+            );
+            window.localStorage.setItem(
+                CUSTOMER_SESSION_CACHE_KEY,
+                JSON.stringify({
+                    isCustomer: true,
+                    customerId: liveCustomer.id,
+                    username: liveCustomer.username,
+                    lastSyncedAt: snapshot.lastSyncedAt,
+                }),
+            );
+            setCachedSnapshot(snapshot);
+        } catch {
+            // Cache is best-effort; the online dashboard remains usable.
+        }
+    }, [
+        isOnline,
+        liveCardTemplates,
+        liveStampCodes,
+        liveCompletedCards,
+        liveCustomerName,
+        livePerkClaims,
+        liveCustomer,
+        liveCustomerQrPayload,
+    ]);
 
     const [profileDialogOpen, setProfileDialogOpen] = useState(false);
     const [profileTab, setProfileTab] = useState('info');
@@ -285,15 +386,49 @@ export default function Index({
         });
     };
 
-    const handleRecordStamp = () => setMethodDialogOpen(true);
+    const formatLastSynced = (value?: string) => {
+        if (!value) return 'not synced yet';
+
+        const diffMs = Date.now() - new Date(value).getTime();
+        const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+        if (diffMinutes < 1) return 'just now';
+        if (diffMinutes === 1) return '1 minute ago';
+        if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
+
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours === 1) return '1 hour ago';
+        if (diffHours < 24) return `${diffHours} hours ago`;
+
+        return new Date(value).toLocaleString();
+    };
+
+    const handleRecordStamp = () => {
+        if (!isOnline) {
+            toast.info('You are offline. Show your personal QR to the business to receive stamps.');
+            return;
+        }
+
+        setMethodDialogOpen(true);
+    };
 
     const handleManualEntry = () => {
+        if (!isOnline) {
+            toast.info('Manual stamp entry is disabled while offline.');
+            return;
+        }
+
         setMethodDialogOpen(false);
         setRecordDialogOpen(true);
         setData('loyalty_card_id', currentCard?.id);
     };
 
     const handleScanQR = async () => {
+        if (!isOnline) {
+            toast.info('QR scanning is disabled while offline.');
+            return;
+        }
+
         setMethodDialogOpen(false);
         setScanDialogOpen(true);
         setScanning(true);
@@ -979,6 +1114,7 @@ export default function Index({
                 <div className="flex items-center gap-3">
                     <Button
                         onClick={handleRecordStamp}
+                        disabled={!isOnline}
                         className="bg-primary text-white hover:bg-primary/80"
                         size="sm"
                     >
@@ -1016,11 +1152,20 @@ export default function Index({
 
                 <button
                     onClick={handleRecordStamp}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary shadow-md transition-transform active:scale-95"
+                    disabled={!isOnline}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary shadow-md transition-transform active:scale-95 disabled:opacity-50"
                 >
                     <ScanLine className="h-5 w-5 text-white" />
                 </button>
             </div>
+
+            {!isOnline && (
+                <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-center text-xs font-medium text-amber-800 sm:text-sm">
+                    You are currently offline. Last synced{' '}
+                    {formatLastSynced(cachedSnapshot?.lastSyncedAt)}. Showing
+                    saved loyalty cards, rewards, history, and your personal QR.
+                </div>
+            )}
 
             {/* ── MAIN CONTENT ── */}
             <main className="mx-auto w-full max-w-7xl flex-1 overflow-y-auto px-0 py-0 pb-24 sm:px-6 sm:py-8 sm:pb-8">
