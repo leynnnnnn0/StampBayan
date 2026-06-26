@@ -25,6 +25,7 @@ import {
     Camera,
     ChevronLeft,
     ChevronRight,
+    Download,
     Gift,
     Home,
     Plus,
@@ -164,7 +165,9 @@ type CustomerDashboardSnapshot = {
 const CUSTOMER_DASHBOARD_CACHE_KEY = 'stampbayan_customer_dashboard';
 const CUSTOMER_SESSION_CACHE_KEY = 'stampbayan_customer_session';
 const CUSTOMER_DASHBOARD_STATE_KEY = 'stampbayan_customer_dashboard_state';
+const OFFLINE_FEATURE_MODAL_KEY = 'stampbayan_offline_feature_seen';
 const CUSTOMER_DASHBOARD_TABS = ['home', 'perks', 'history', 'account'];
+const OFFLINE_FEATURE_IMAGE = '/images/stampbayan-offline-feature.png';
 
 function completedCardStamps(card: CompletedCard): CompletedStamp[] {
     return typeof card.stamps_data === 'string'
@@ -265,6 +268,8 @@ export default function Index({
     const [recordDialogOpen, setRecordDialogOpen] = useState(false);
     const [methodDialogOpen, setMethodDialogOpen] = useState(false);
     const [scanDialogOpen, setScanDialogOpen] = useState(false);
+    const [offlineFeatureOpen, setOfflineFeatureOpen] = useState(false);
+    const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
     const [selectedCompletedCard, setSelectedCompletedCard] =
         useState<CompletedCard | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -288,6 +293,71 @@ export default function Index({
             window.removeEventListener('offline', handleOffline);
         };
     }, []);
+
+    useEffect(() => {
+        const handler = (event: Event) => {
+            event.preventDefault();
+            setInstallPrompt(event);
+        };
+
+        window.addEventListener('beforeinstallprompt', handler);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handler);
+        };
+    }, []);
+
+    useEffect(() => {
+        try {
+            const alreadySeen = window.localStorage.getItem(
+                OFFLINE_FEATURE_MODAL_KEY,
+            );
+
+            if (!alreadySeen && isOnline) {
+                setOfflineFeatureOpen(true);
+            }
+        } catch {
+            if (isOnline) setOfflineFeatureOpen(true);
+        }
+    }, [isOnline]);
+
+    const dismissOfflineFeature = () => {
+        try {
+            window.localStorage.setItem(OFFLINE_FEATURE_MODAL_KEY, 'true');
+        } catch {
+            // Dismissal persistence is best-effort.
+        }
+
+        setOfflineFeatureOpen(false);
+    };
+
+    const handleInstallApp = async () => {
+        const promptEvent = installPrompt as
+            | (Event & {
+                  prompt?: () => Promise<void>;
+                  userChoice?: Promise<{ outcome: string }>;
+              })
+            | null;
+
+        dismissOfflineFeature();
+
+        if (promptEvent?.prompt) {
+            await promptEvent.prompt();
+            await promptEvent.userChoice?.catch(() => null);
+            setInstallPrompt(null);
+            return;
+        }
+
+        const isIos =
+            /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        window.alert(
+            isIos
+                ? 'To install StampBayan: open this page in Safari, tap Share, then Add to Home Screen.'
+                : 'To install StampBayan: open your browser menu and choose Install app or Add to Home screen.',
+        );
+    };
 
     useEffect(() => {
         if (!isOnline) return;
@@ -983,6 +1053,72 @@ export default function Index({
         ? `data:image/svg+xml;utf8,${encodeURIComponent(customerQrSvg)}`
         : `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(customerQrPayload)}`;
 
+    const offlineFeatureDialog = (
+        <Dialog
+            open={offlineFeatureOpen}
+            onOpenChange={(open) => {
+                if (!open) dismissOfflineFeature();
+                else setOfflineFeatureOpen(true);
+            }}
+        >
+            <DialogContent className="max-h-[92vh] overflow-y-auto p-0 sm:max-w-2xl lg:max-w-4xl">
+                <div className="overflow-hidden rounded-t-lg bg-primary/5">
+                    <img
+                        src={OFFLINE_FEATURE_IMAGE}
+                        alt="StampBayan offline feature announcement"
+                        className="aspect-video w-full object-cover"
+                    />
+                </div>
+                <div className="space-y-5 px-5 pb-5 sm:px-7 sm:pb-7">
+                    <DialogHeader className="text-left">
+                        <DialogTitle className="text-xl font-bold text-gray-950 sm:text-2xl">
+                            Earn stamps even offline
+                        </DialogTitle>
+                        <DialogDescription className="text-sm leading-6 text-gray-600 sm:text-base">
+                            Install the app from the Download button on our
+                            website. After that, you can open your loyalty
+                            cards without internet, show your personal QR to
+                            the business, and new stamps will appear when
+                            you&apos;re back online.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-2 text-sm font-medium text-gray-700 sm:grid-cols-3">
+                        {['Install once', 'Works offline', 'Syncs when online'].map(
+                            (item) => (
+                                <div
+                                    key={item}
+                                    className="rounded-xl bg-amber-50 px-3 py-2 text-center text-amber-900"
+                                >
+                                    {item}
+                                </div>
+                            ),
+                        )}
+                    </div>
+
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={dismissOfflineFeature}
+                            className="w-full sm:w-auto"
+                        >
+                            Got it
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleInstallApp}
+                            className="w-full bg-primary text-white hover:bg-primary/80 sm:w-auto"
+                        >
+                            <Download className="mr-2 h-4 w-4" />
+                            Install App
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+
     const profileDialog = (
         <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
             <DialogContent className="sm:max-w-md">
@@ -1133,6 +1269,7 @@ export default function Index({
         return (
             <div className="min-h-screen bg-gray-50">
                 {profileDialog}
+                {offlineFeatureDialog}
                 <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
                     <img src={LOGO} alt="business logo" className="h-10" />
                     <DropdownMenu>
@@ -1177,6 +1314,7 @@ export default function Index({
     return (
         <div className="flex min-h-screen flex-col bg-gray-50">
             {profileDialog}
+            {offlineFeatureDialog}
 
             {/* ── DESKTOP HEADER (hidden on mobile) ── */}
             <header className="hidden items-center justify-between border-b border-gray-200 bg-white px-6 py-4 shadow-sm sm:flex">
