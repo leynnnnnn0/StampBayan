@@ -117,6 +117,20 @@ class StampCodeController extends Controller
             return back()->withErrors(['customer_qr' => 'This customer does not belong to your business.']);
         }
 
+        $recentStamp = StampCode::where('business_id', $business->id)
+            ->where('customer_id', $customer->id)
+            ->where('loyalty_card_id', $loyaltyCard->id)
+            ->whereNotNull('used_at')
+            ->where('used_at', '>=', now()->subSeconds(20))
+            ->latest('used_at')
+            ->first();
+
+        if ($recentStamp) {
+            return back()->withErrors([
+                'customer_qr' => 'This customer was already stamped just now. Ask the customer to refresh their phone to see the new stamp.',
+            ]);
+        }
+
         try {
             return DB::transaction(function () use ($business, $customer, $loyaltyCard, $validated) {
                 $stampCode = StampCode::create([
@@ -135,6 +149,37 @@ class StampCodeController extends Controller
             });
         } catch (\Exception $e) {
             return back()->withErrors(['customer_qr' => 'Failed to issue stamp. Please try again.']);
+        }
+    }
+
+    public function cancel(Request $request, int $stampCodeId)
+    {
+        $business = Auth::user()->business;
+        $stampCode = StampCode::withTrashed()
+            ->where('business_id', $business->id)
+            ->findOrFail($stampCodeId);
+
+        if ($stampCode->trashed()) {
+            return back()->withErrors([
+                'stamp' => 'This stamp has already been canceled or archived.',
+            ]);
+        }
+
+        try {
+            DB::transaction(function () use ($stampCode) {
+                $customerId = $stampCode->customer_id;
+                $loyaltyCardId = $stampCode->loyalty_card_id;
+
+                $stampCode->delete();
+
+                if ($customerId) {
+                    $this->trimUnredeemedPerks($customerId, $loyaltyCardId);
+                }
+            });
+
+            return back()->with('success', 'Stamp canceled. Ask the customer to refresh their phone to see the updated card.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['stamp' => 'Failed to cancel stamp. Please try again.']);
         }
     }
 
@@ -284,5 +329,27 @@ class StampCodeController extends Controller
             'stamps_remaining' => $loyaltyCard->stampsNeeded - $newTotal,
             'newly_unlocked_perks' => $newlyUnlockedPerks,
         ];
+    }
+
+    private function trimUnredeemedPerks(int $customerId, int $loyaltyCardId): void
+    {
+        $loyaltyCard = LoyaltyCard::find($loyaltyCardId);
+
+        if (!$loyaltyCard) {
+            return;
+        }
+
+        $currentStamps = StampCode::where('customer_id', $customerId)
+            ->where('loyalty_card_id', $loyaltyCardId)
+            ->whereNotNull('used_at')
+            ->sum('number_of_stamps');
+
+        PerkClaim::where('customer_id', $customerId)
+            ->where('loyalty_card_id', $loyaltyCardId)
+            ->where('is_redeemed', false)
+            ->whereHas('perk', function ($query) use ($currentStamps) {
+                $query->where('stampNumber', '>', $currentStamps);
+            })
+            ->delete();
     }
 }

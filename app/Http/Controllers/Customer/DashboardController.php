@@ -7,6 +7,10 @@ use App\Models\CompletedLoyaltyCard;
 use App\Models\LoyaltyCard;
 use App\Models\PerkClaim;
 use App\Models\StampCode;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -38,10 +42,13 @@ class DashboardController extends Controller
             ->recent() // Order by most recent completions
             ->get()
             ->map(function ($completed) {
+                $loyaltyCard = $completed->loyaltyCard;
+
                 return [
                     'id' => $completed->id,
                     'loyalty_card_id' => $completed->loyalty_card_id,
-                    'loyalty_card_name' => $completed->loyaltyCard->name,
+                    'loyalty_card_name' => $loyaltyCard?->name ?? 'Deleted loyalty card',
+                    'loyalty_card' => $loyaltyCard,
                     'stamps_collected' => $completed->stamps_collected,
                     'completed_at' => $completed->completed_at,
                     'card_cycle' => $completed->card_cycle,
@@ -62,6 +69,7 @@ class DashboardController extends Controller
             'perkClaims' => $perkClaims,
             'customer' => $customer,
             'customerQrPayload' => $this->customerQrPayload($customer->id, $customer->business_id),
+            'customerQrSvg' => $this->customerQrSvg($customer->id, $customer->business_id),
         ]);
     }
 
@@ -70,6 +78,17 @@ class DashboardController extends Controller
         $signature = substr(hash_hmac('sha256', "{$customerId}|{$businessId}", config('app.key')), 0, 24);
 
         return "stampbayan:customer:{$customerId}:{$businessId}:{$signature}";
+    }
+
+    private function customerQrSvg(int $customerId, int $businessId): string
+    {
+        $renderer = new ImageRenderer(
+            new RendererStyle(260),
+            new SvgImageBackEnd()
+        );
+        $writer = new Writer($renderer);
+
+        return $writer->writeString($this->customerQrPayload($customerId, $businessId));
     }
 
     function greetingByTime()

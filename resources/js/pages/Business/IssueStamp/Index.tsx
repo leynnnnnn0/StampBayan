@@ -55,6 +55,7 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
   const [error, setError] = useState<string | null>(null);
   const scanVideoRef = useRef<HTMLVideoElement>(null);
   const scanControlsRef = useRef<ScanControls | null>(null);
+  const customerScanSubmittedRef = useRef(false);
 
   const generateCode = () => {
     if (!selectedCardId) {
@@ -174,6 +175,7 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
 
     setError(null);
     setNumberOfStampsError(null);
+    customerScanSubmittedRef.current = false;
     setScanCustomerOpen(true);
     setScanningCustomer(true);
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -200,6 +202,9 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
         (result, error, controls) => {
           scanControlsRef.current = controls;
           if (!result) return;
+          if (customerScanSubmittedRef.current) return;
+
+          customerScanSubmittedRef.current = true;
 
           router.post(
             "/business/issue-stamp/scan-customer",
@@ -211,7 +216,9 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
             {
               preserveScroll: true,
               onSuccess: () => {
-                toast.success("Stamp issued successfully.");
+                toast.success(
+                  "Stamp issued successfully. Ask the customer to refresh their phone to see the new stamp.",
+                );
                 stopCustomerScanner();
               },
               onError: (errors) => {
@@ -221,6 +228,7 @@ export default function Index({ code, cards, loyalty_card_id }: Props) {
                     errors.number_of_stamps ||
                     "Failed to issue stamp. Please try again.",
                 );
+                customerScanSubmittedRef.current = false;
                 stopCustomerScanner();
               },
               onFinish: stopCustomerScanner,

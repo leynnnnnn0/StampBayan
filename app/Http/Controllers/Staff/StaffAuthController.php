@@ -54,7 +54,7 @@ class StaffAuthController extends Controller
         // Proceed with authentication
         if (Auth::guard('staff')->attempt(
             $credentials,
-            $request->boolean('remember')
+            true
         )) {
             $request->session()->regenerate();
             RateLimiter::clear($this->throttleKey($request));

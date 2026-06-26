@@ -71,6 +71,9 @@ const navDropdownLinks: Record<string, { label: string; href: string }[]> = {
     ],
 };
 
+const CUSTOMER_DASHBOARD_CACHE_KEY = 'stampbayan_customer_dashboard';
+const CUSTOMER_SESSION_CACHE_KEY = 'stampbayan_customer_session';
+
 const productCards = [
     {
         name: 'Stamp Cards',
@@ -638,6 +641,27 @@ export default function Welcome() {
     const [dashboardDialogOpen, setDashboardDialogOpen] = useState(false);
     const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
 
+    const hasSavedCustomerDashboard = () => {
+        if (typeof window === 'undefined') return false;
+
+        try {
+            const session = window.localStorage.getItem(
+                CUSTOMER_SESSION_CACHE_KEY,
+            );
+            const dashboard = window.localStorage.getItem(
+                CUSTOMER_DASHBOARD_CACHE_KEY,
+            );
+
+            return Boolean(session && dashboard);
+        } catch {
+            return false;
+        }
+    };
+
+    const openSavedCustomerDashboard = () => {
+        window.location.assign('/customer/dashboard');
+    };
+
     useEffect(() => {
         const handler = (event: Event) => {
             event.preventDefault();
@@ -649,6 +673,16 @@ export default function Welcome() {
         return () => {
             window.removeEventListener('beforeinstallprompt', handler);
         };
+    }, []);
+
+    useEffect(() => {
+        if (
+            typeof navigator !== 'undefined' &&
+            !navigator.onLine &&
+            hasSavedCustomerDashboard()
+        ) {
+            openSavedCustomerDashboard();
+        }
     }, []);
 
     const handleMobileDownload = async () => {
@@ -678,6 +712,15 @@ export default function Welcome() {
     };
 
     const handleDashboardClick = () => {
+        if (
+            typeof navigator !== 'undefined' &&
+            !navigator.onLine &&
+            hasSavedCustomerDashboard()
+        ) {
+            openSavedCustomerDashboard();
+            return;
+        }
+
         if (auth.customer) {
             router.visit('/customer/dashboard');
             return;

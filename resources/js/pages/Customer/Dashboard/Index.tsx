@@ -93,6 +93,7 @@ interface CompletedCard {
     id: number;
     loyalty_card_id: number;
     loyalty_card_name: string;
+    loyalty_card: LoyaltyCard | null;
     stamps_collected: number;
     completed_at: string;
     card_cycle: number;
@@ -133,6 +134,7 @@ interface Props {
         username: string;
     };
     customerQrPayload: string;
+    customerQrSvg: string;
 }
 
 interface CustomerFlash {
@@ -155,11 +157,14 @@ type CustomerDashboardSnapshot = {
     perkClaims: PerkClaim[];
     customer: Props['customer'];
     customerQrPayload: string;
+    customerQrSvg: string;
     lastSyncedAt: string;
 };
 
 const CUSTOMER_DASHBOARD_CACHE_KEY = 'stampbayan_customer_dashboard';
 const CUSTOMER_SESSION_CACHE_KEY = 'stampbayan_customer_session';
+const CUSTOMER_DASHBOARD_STATE_KEY = 'stampbayan_customer_dashboard_state';
+const CUSTOMER_DASHBOARD_TABS = ['home', 'perks', 'history', 'account'];
 
 function completedCardStamps(card: CompletedCard): CompletedStamp[] {
     return typeof card.stamps_data === 'string'
@@ -175,6 +180,7 @@ export default function Index({
     perkClaims: livePerkClaims,
     customer: liveCustomer,
     customerQrPayload: liveCustomerQrPayload,
+    customerQrSvg: liveCustomerQrSvg,
 }: Props) {
     const readCachedSnapshot = (): CustomerDashboardSnapshot | null => {
         if (typeof window === 'undefined') return null;
@@ -202,6 +208,7 @@ export default function Index({
         perkClaims: livePerkClaims,
         customer: liveCustomer,
         customerQrPayload: liveCustomerQrPayload,
+        customerQrSvg: liveCustomerQrSvg,
         lastSyncedAt: new Date().toISOString(),
     };
     const dashboardSnapshot =
@@ -214,10 +221,47 @@ export default function Index({
         perkClaims,
         customer,
         customerQrPayload,
+        customerQrSvg,
     } = dashboardSnapshot;
 
+    const readSavedDashboardState = () => {
+        if (typeof window === 'undefined') {
+            return { activeTab: 'home', cardId: null as number | null };
+        }
+
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const tabFromUrl = params.get('tab');
+            const cardFromUrl = params.get('card');
+            const saved = JSON.parse(
+                window.localStorage.getItem(CUSTOMER_DASHBOARD_STATE_KEY) ||
+                    '{}',
+            ) as { activeTab?: string; cardId?: number };
+
+            const activeTab =
+                tabFromUrl && CUSTOMER_DASHBOARD_TABS.includes(tabFromUrl)
+                    ? tabFromUrl
+                    : saved.activeTab &&
+                        CUSTOMER_DASHBOARD_TABS.includes(saved.activeTab)
+                      ? saved.activeTab
+                      : 'home';
+
+            return {
+                activeTab,
+                cardId: cardFromUrl
+                    ? Number(cardFromUrl)
+                    : saved.cardId
+                      ? Number(saved.cardId)
+                      : null,
+            };
+        } catch {
+            return { activeTab: 'home', cardId: null as number | null };
+        }
+    };
+
+    const savedDashboardState = readSavedDashboardState();
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
-    const [activeTab, setActiveTab] = useState('home');
+    const [activeTab, setActiveTab] = useState(savedDashboardState.activeTab);
     const [recordDialogOpen, setRecordDialogOpen] = useState(false);
     const [methodDialogOpen, setMethodDialogOpen] = useState(false);
     const [scanDialogOpen, setScanDialogOpen] = useState(false);
@@ -277,7 +321,44 @@ export default function Index({
         livePerkClaims,
         liveCustomer,
         liveCustomerQrPayload,
+        liveCustomerQrSvg,
     ]);
+
+    useEffect(() => {
+        const savedCardId = savedDashboardState.cardId;
+        if (!savedCardId || cardTemplates.length === 0) return;
+
+        const savedIndex = cardTemplates.findIndex(
+            (card) => card.id === savedCardId,
+        );
+        if (savedIndex !== -1) {
+            setCurrentCardIndex(savedIndex);
+        }
+    }, [cardTemplates]);
+
+    useEffect(() => {
+        if (cardTemplates.length === 0) return;
+
+        const cardId = cardTemplates[currentCardIndex]?.id ?? null;
+
+        try {
+            window.localStorage.setItem(
+                CUSTOMER_DASHBOARD_STATE_KEY,
+                JSON.stringify({ activeTab, cardId }),
+            );
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', activeTab);
+            if (cardId) {
+                url.searchParams.set('card', String(cardId));
+            } else {
+                url.searchParams.delete('card');
+            }
+            window.history.replaceState({}, '', url);
+        } catch {
+            // UI state persistence is best-effort.
+        }
+    }, [activeTab, currentCardIndex, cardTemplates]);
 
     const [profileDialogOpen, setProfileDialogOpen] = useState(false);
     const [profileTab, setProfileTab] = useState('info');
@@ -781,9 +862,9 @@ export default function Index({
     }: {
         completed: CompletedCard;
     }) => {
-        const cardTemplate = cardTemplates.find(
-            (c) => c.id === completed.loyalty_card_id,
-        );
+        const cardTemplate =
+            cardTemplates.find((c) => c.id === completed.loyalty_card_id) ||
+            completed.loyalty_card;
         if (!cardTemplate) return null;
         const logoUrl = cardTemplate.logo ? `/${cardTemplate.logo}` : null;
         const backgroundImageUrl = cardTemplate.backgroundImage
@@ -898,7 +979,9 @@ export default function Index({
     const backgroundImageUrl = currentCard?.backgroundImage
         ? `/${currentCard.backgroundImage}`
         : null;
-    const customerQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(customerQrPayload)}`;
+    const customerQrUrl = customerQrSvg
+        ? `data:image/svg+xml;utf8,${encodeURIComponent(customerQrSvg)}`
+        : `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(customerQrPayload)}`;
 
     const profileDialog = (
         <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>

@@ -50,7 +50,7 @@ class CustomerAuthController extends Controller
 
         if (Auth::guard('customer')->attempt(
             $credentials, 
-            $request->boolean('remember')
+            true
         )) {
             $request->session()->regenerate();
             RateLimiter::clear($this->throttleKey($request));
@@ -99,7 +99,7 @@ class CustomerAuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        Auth::guard('customer')->login($customer);
+        Auth::guard('customer')->login($customer, true);
 
         return redirect()->route('customer.dashboard');
     }

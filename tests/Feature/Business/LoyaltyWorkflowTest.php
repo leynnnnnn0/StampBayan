@@ -129,3 +129,39 @@ test('perk claims can be redeemed by the owning business and not another busines
         ->redeemed_by->toBe($user->id)
         ->remarks->toBe('claimed in store');
 });
+
+test('business users can cancel an accidentally issued stamp', function () {
+    [$user, $business] = businessUser();
+    $customer = Customer::factory()->for($business)->create();
+    $card = LoyaltyCard::factory()->for($business)->create([
+        'stampsNeeded' => 10,
+    ]);
+    $perk = Perk::factory()->for($card, 'loyaltyCard')->create([
+        'stampNumber' => 5,
+    ]);
+    $stamp = StampCode::create([
+        'user_id' => $user->id,
+        'business_id' => $business->id,
+        'loyalty_card_id' => $card->id,
+        'customer_id' => $customer->id,
+        'code' => 'TEST-CANCEL-STAMP',
+        'used_at' => now(),
+        'is_expired' => false,
+        'is_offline_code' => false,
+        'number_of_stamps' => 5,
+    ]);
+    PerkClaim::create([
+        'customer_id' => $customer->id,
+        'loyalty_card_id' => $card->id,
+        'perk_id' => $perk->id,
+        'stamps_at_claim' => 5,
+        'is_redeemed' => false,
+    ]);
+
+    $this->actingAs($user)
+        ->post("/business/stamp-codes/{$stamp->id}/cancel")
+        ->assertRedirect();
+
+    expect($stamp->refresh()->trashed())->toBeTrue();
+    expect(PerkClaim::where('customer_id', $customer->id)->exists())->toBeFalse();
+});

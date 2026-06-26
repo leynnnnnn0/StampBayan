@@ -15,6 +15,17 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Pagination from "@/components/pagination";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface PaginationLink {
   url: string | null;
@@ -42,6 +53,7 @@ interface StampCode {
     email: string;
   } | null;
   used_at: string | null;
+  deleted_at: string | null;
   is_expired: boolean;
   created_at: string;
   loyalty_card: {
@@ -58,6 +70,9 @@ interface Props {
 
 export default function Index({ stampCodes, filters }: Props) {
   const [search, setSearch] = useState(filters.search || "");
+  const [stampToCancel, setStampToCancel] = useState<StampCode | null>(null);
+  const [cancelPhrase, setCancelPhrase] = useState("");
+  const [cancelingStamp, setCancelingStamp] = useState(false);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -86,6 +101,9 @@ export default function Index({ stampCodes, filters }: Props) {
   };
 
   const getStatusBadge = (stampCode: StampCode) => {
+    if (stampCode.deleted_at) {
+      return <Badge className="bg-gray-500 text-white">Canceled</Badge>;
+    }
     if (stampCode.is_expired) {
       return <Badge className="bg-red-500 text-white">Expired</Badge>;
     }
@@ -93,6 +111,39 @@ export default function Index({ stampCodes, filters }: Props) {
       return <Badge className="bg-green-500 text-white">Used</Badge>;
     }
     return <Badge variant="default">Active</Badge>;
+  };
+
+  const openCancelDialog = (stampCode: StampCode) => {
+    setStampToCancel(stampCode);
+    setCancelPhrase("");
+  };
+
+  const closeCancelDialog = (force = false) => {
+    if (cancelingStamp && !force) return;
+
+    setStampToCancel(null);
+    setCancelPhrase("");
+  };
+
+  const cancelStamp = () => {
+    if (!stampToCancel || cancelPhrase !== "cancel stamp") return;
+
+    router.post(
+      `/business/stamp-codes/${stampToCancel.id}/cancel`,
+      {},
+      {
+        preserveScroll: true,
+        onStart: () => setCancelingStamp(true),
+        onSuccess: () => {
+          toast.success("Stamp canceled. Ask the customer to refresh their phone.");
+          closeCancelDialog(true);
+        },
+        onError: (errors) => {
+          toast.error(errors.stamp || "Failed to cancel stamp. Please try again.");
+        },
+        onFinish: () => setCancelingStamp(false),
+      },
+    );
   };
 
   return (
@@ -163,6 +214,18 @@ export default function Index({ stampCodes, filters }: Props) {
                     <span className="text-gray-500 font-medium text-xs">Created: </span>
                     <span className="text-gray-700">{formatDate(stampCode.created_at)}</span>
                   </div>
+
+                  {stampCode.used_at && !stampCode.deleted_at && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => openCancelDialog(stampCode)}
+                    >
+                      Cancel Stamp
+                    </Button>
+                  )}
                 </div>
               </div>
             ))
@@ -185,6 +248,7 @@ export default function Index({ stampCodes, filters }: Props) {
                 <TableHead>Status</TableHead>
                 <TableHead>Used At</TableHead>
                 <TableHead>Created At</TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -215,11 +279,26 @@ export default function Index({ stampCodes, filters }: Props) {
                     <TableCell>{getStatusBadge(stampCode)}</TableCell>
                     <TableCell>{formatDate(stampCode.used_at)}</TableCell>
                     <TableCell>{formatDate(stampCode.created_at)}</TableCell>
+                    <TableCell className="text-right">
+                      {stampCode.used_at && !stampCode.deleted_at ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={() => openCancelDialog(stampCode)}
+                        >
+                          Cancel Stamp
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-gray-400">—</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     No stamp codes found.
                   </TableCell>
                 </TableRow>
@@ -232,6 +311,70 @@ export default function Index({ stampCodes, filters }: Props) {
             <Pagination data={stampCodes}/>
         )}
       </div>
+
+      <AlertDialog
+        open={!!stampToCancel}
+        onOpenChange={(open) => {
+          if (!open) closeCancelDialog();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this stamp?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  This action can&apos;t be undone. The stamp will be canceled,
+                  and the customer will need to refresh their phone to see the
+                  updated card.
+                </p>
+                {stampToCancel && (
+                  <div className="rounded-lg border bg-muted/40 p-3 text-left">
+                    <p>
+                      <span className="font-medium text-foreground">Card:</span>{" "}
+                      {stampToCancel.loyalty_card.name}
+                    </p>
+                    <p>
+                      <span className="font-medium text-foreground">Customer:</span>{" "}
+                      {stampToCancel.customer?.username || "Unassigned"}
+                    </p>
+                    <p>
+                      <span className="font-medium text-foreground">Stamps:</span>{" "}
+                      {stampToCancel.number_of_stamps}
+                    </p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <label
+                    htmlFor="cancel-stamp-confirmation"
+                    className="block font-medium text-foreground"
+                  >
+                    Type <span className="font-bold">cancel stamp</span> to confirm.
+                  </label>
+                  <Input
+                    id="cancel-stamp-confirmation"
+                    value={cancelPhrase}
+                    onChange={(event) => setCancelPhrase(event.target.value)}
+                    placeholder="cancel stamp"
+                    disabled={cancelingStamp}
+                  />
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelingStamp}>Keep Stamp</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={cancelPhrase !== "cancel stamp" || cancelingStamp}
+              onClick={cancelStamp}
+            >
+              {cancelingStamp ? "Canceling..." : "Cancel Stamp"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

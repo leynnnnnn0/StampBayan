@@ -21,7 +21,6 @@ export default function Login({ business, status, isDemo }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: isDemo ? 'customer@gmail.com' : '',
         password: isDemo ? 'password' : '',
-        remember: false,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -114,21 +113,6 @@ export default function Login({ business, status, isDemo }: LoginProps) {
                       
                             </div>
 
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    id="remember"
-                                    type="checkbox"
-                                    checked={data.remember}
-                                    onChange={(e) => setData('remember', e.target.checked)}
-                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-white"
-                                />
-                                <Label 
-                                    htmlFor="remember" 
-                                    className="text-sm font-normal cursor-pointer"
-                                >
-                                    Remember me
-                                </Label>
-                            </div>
                         </CardContent>
 
                         <CardFooter className="flex flex-col space-y-4 mt-5">

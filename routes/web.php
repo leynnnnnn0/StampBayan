@@ -64,6 +64,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/issue-stamp', [IssueStampController::class, 'index']);
         Route::post('/issue-stamp/scan-customer', [StampCodeController::class, 'recordCustomerScan']);
         Route::get('/stamp-codes', [StampCodeController::class, 'index']);
+        Route::post('/stamp-codes/{stampCodeId}/cancel', [StampCodeController::class, 'cancel']);
 
 
 
