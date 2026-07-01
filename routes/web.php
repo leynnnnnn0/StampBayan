@@ -37,8 +37,8 @@ Route::post('/api/chat', [ChatBotController::class, 'chat'])->middleware('auth')
 
 Route::post('/suggestions', [SuggestionController::class, 'store'])->name('suggestions.store');
 
-Route::post('/product-analytics/events', [ProductAnalyticsEventController::class, 'store'])
-    ->name('product-analytics.events.store');
+// Route::post('/product-analytics/events', [ProductAnalyticsEventController::class, 'store'])
+//     ->name('product-analytics.events.store');
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -53,10 +53,10 @@ Route::get('/pricing', function () {
 Route::get('/documentation', [DocumentationController::class, 'index']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::prefix('admin')->group(function () {
-        Route::get('/product-analytics', [ProductAnalyticsController::class, 'index'])
-            ->name('admin.product-analytics');
-    });
+    // Route::prefix('admin')->group(function () {
+    //     Route::get('/product-analytics', [ProductAnalyticsController::class, 'index'])
+    //         ->name('admin.product-analytics');
+    // });
 
     Route::prefix('business')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

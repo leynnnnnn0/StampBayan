@@ -41,18 +41,18 @@ function trackProductEvent(eventName: string, metadata: Record<string, unknown> 
         metadata,
     };
 
-    fetch('/product-analytics/events', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken(),
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify(payload),
-        keepalive: eventName === 'page_duration',
-    }).catch(() => {
-        // Analytics must never interrupt the app experience.
-    });
+    // fetch('/product-analytics/events', {
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/json',
+    //         'X-CSRF-TOKEN': csrfToken(),
+    //         'X-Requested-With': 'XMLHttpRequest',
+    //     },
+    //     body: JSON.stringify(payload),
+    //     keepalive: eventName === 'page_duration',
+    // }).catch(() => {
+    //     // Analytics must never interrupt the app experience.
+    // });
 }
 
 function startProductAnalytics() {
