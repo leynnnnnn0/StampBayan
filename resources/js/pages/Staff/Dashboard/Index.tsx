@@ -1,5 +1,5 @@
 import { Head, router } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LOGO from "../../../../images/mainLogo.png";
 import {
   Select,
@@ -33,6 +33,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Award, Eye, Check, Undo2, Calendar, User, Sparkles, QrCode, Ticket, LogOut, Menu, X } from "lucide-react";
 import { toast } from "sonner";
+import { BrowserQRCodeReader } from "@zxing/browser";
 
 interface LoyaltyCard {
   id: number;
@@ -81,6 +82,7 @@ interface StampCodeRecord {
   } | null;
   used_at: string | null;
   is_expired: boolean;
+  number_of_stamps: number;
   created_at: string;
   loyalty_card: {
     name: string;
@@ -93,6 +95,7 @@ interface Props {
     code: string;
     qr_url: string;
     created_at: string;
+    number_of_stamps?: number;
   };
   cards?: LoyaltyCard[];
   loyalty_card_id?: string;
@@ -105,14 +108,25 @@ interface Props {
   };
 }
 
+type ScanControls = {
+  stop: () => void;
+};
+
 export default function Index({ code, cards = [], loyalty_card_id, perkClaims = [], stampCodes = [], stats }: Props) {
   const [loading, setLoading] = useState(false);
   const [downloadingOffline, setDownloadingOffline] = useState(false);
+  const [scanCustomerOpen, setScanCustomerOpen] = useState(false);
+  const [scanningCustomer, setScanningCustomer] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string>(
     loyalty_card_id?.toString() || (cards.length > 0 ? cards[0].id.toString() : "")
   );
+  const [numberOfStamps, setNumberOfStamps] = useState<number>(1);
+  const [numberOfStampsError, setNumberOfStampsError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const scanVideoRef = useRef<HTMLVideoElement>(null);
+  const scanControlsRef = useRef<ScanControls | null>(null);
+  const customerScanSubmittedRef = useRef(false);
   
   // Perk Claims state
   const [selectedClaim, setSelectedClaim] = useState<PerkClaim | null>(null);
@@ -131,9 +145,15 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
       setError("Please select a loyalty card");
       return;
     }
+    if (numberOfStamps < 1) {
+      setNumberOfStampsError("Please enter a valid number of stamps");
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    router.get('/staff/dashboard', { loyalty_card_id: selectedCardId });
+    setNumberOfStampsError(null);
+    router.get('/staff/dashboard', { loyalty_card_id: selectedCardId, number_of_stamps: numberOfStamps });
     setLoading(false);
   };
 
@@ -142,11 +162,125 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
       setError("Please select a loyalty card");
       return;
     }
+    if (numberOfStamps < 1) {
+      setNumberOfStampsError("Please enter a valid number of stamps");
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    router.get('/staff/dashboard', { loyalty_card_id: selectedCardId });
+    setNumberOfStampsError(null);
+    router.get('/staff/dashboard', { loyalty_card_id: selectedCardId, number_of_stamps: numberOfStamps });
     setLoading(false);
   };
+
+  const stopCustomerScanner = () => {
+    if (scanControlsRef.current) {
+      try {
+        scanControlsRef.current.stop();
+      } catch {
+        scanControlsRef.current = null;
+      }
+      scanControlsRef.current = null;
+    }
+
+    if (scanVideoRef.current?.srcObject) {
+      const stream = scanVideoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      scanVideoRef.current.srcObject = null;
+    }
+
+    setScanningCustomer(false);
+    setScanCustomerOpen(false);
+  };
+
+  const scanCustomerQr = async () => {
+    if (!selectedCardId) {
+      setError("Please select a loyalty card");
+      return;
+    }
+    if (numberOfStamps < 1) {
+      setNumberOfStampsError("Please enter a valid number of stamps");
+      return;
+    }
+
+    setError(null);
+    setNumberOfStampsError(null);
+    customerScanSubmittedRef.current = false;
+    setScanCustomerOpen(true);
+    setScanningCustomer(true);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    try {
+      const codeReader = new BrowserQRCodeReader();
+      if (!scanVideoRef.current) throw new Error("Video element not ready");
+
+      const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
+      if (videoInputDevices.length === 0) throw new Error("No camera devices found");
+
+      const backCamera = videoInputDevices.find(
+        (device) =>
+          device.label.toLowerCase().includes("back") ||
+          device.label.toLowerCase().includes("rear") ||
+          device.label.toLowerCase().includes("environment"),
+      );
+      const selectedDeviceId =
+        backCamera?.deviceId || videoInputDevices[videoInputDevices.length - 1]?.deviceId;
+
+      const controls = await codeReader.decodeFromVideoDevice(
+        selectedDeviceId,
+        scanVideoRef.current,
+        (result, _error, controls) => {
+          scanControlsRef.current = controls;
+          if (!result || customerScanSubmittedRef.current) return;
+
+          customerScanSubmittedRef.current = true;
+
+          router.post(
+            "/staff/scan-customer",
+            {
+              customer_qr: result.getText(),
+              loyalty_card_id: selectedCardId,
+              number_of_stamps: numberOfStamps,
+            },
+            {
+              preserveScroll: true,
+              onSuccess: () => {
+                toast.success("Stamp issued successfully. Ask the customer to refresh their phone.");
+                stopCustomerScanner();
+              },
+              onError: (errors) => {
+                toast.error(
+                  errors.customer_qr ||
+                    errors.loyalty_card_id ||
+                    errors.number_of_stamps ||
+                    "Failed to issue stamp. Please try again.",
+                );
+                customerScanSubmittedRef.current = false;
+                stopCustomerScanner();
+              },
+              onFinish: stopCustomerScanner,
+            },
+          );
+        },
+      );
+
+      scanControlsRef.current = controls;
+    } catch (err) {
+      const errorName = err instanceof Error ? err.name : "";
+      if (errorName === "NotAllowedError") toast.error("Camera permission denied.");
+      else if (errorName === "NotFoundError") toast.error("No camera found.");
+      else if (errorName === "NotReadableError") toast.error("Camera is already in use.");
+      else toast.error("Failed to access camera.");
+      stopCustomerScanner();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCustomerScanner();
+    };
+  }, []);
 
   const downloadOfflineStamps = async () => {
     setDownloadingOffline(true);
@@ -264,6 +398,52 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
   return (
     <>
       <Head title="Staff Dashboard" />
+      <Dialog
+        open={scanCustomerOpen}
+        onOpenChange={(open) => {
+          if (!open) stopCustomerScanner();
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Scan Customer QR</DialogTitle>
+            <DialogDescription>
+              Ask the customer to show their personal QR from their dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="relative aspect-square overflow-hidden rounded-2xl bg-black">
+              <video
+                ref={scanVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="h-full w-full object-cover"
+              />
+              {scanningCustomer && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative h-56 w-56">
+                    <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-t-4 border-l-4 border-green-400" />
+                    <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-t-4 border-r-4 border-green-400" />
+                    <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-4 border-l-4 border-green-400" />
+                    <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-r-4 border-b-4 border-green-400" />
+                  </div>
+                  <div className="absolute right-0 bottom-5 left-0 text-center">
+                    <p className="inline-block rounded-full bg-black/60 px-4 py-2 text-xs text-white backdrop-blur">
+                      Scanning customer QR...
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={stopCustomerScanner}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <div className="min-h-screen bg-white">
         {/* Top Navigation */}
@@ -414,13 +594,30 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
                       )}
                     </div>
 
+                    <div>
+                      <Label htmlFor="number-of-stamps" className="text-sm font-semibold text-gray-700 mb-2 block">
+                        Number of Stamps
+                      </Label>
+                      <Input
+                        id="number-of-stamps"
+                        type="number"
+                        min="1"
+                        value={numberOfStamps}
+                        onChange={(event) => setNumberOfStamps(parseInt(event.target.value) || 0)}
+                        className="h-12"
+                      />
+                      {numberOfStampsError && (
+                        <p className="mt-1 text-sm text-red-600">{numberOfStampsError}</p>
+                      )}
+                    </div>
+
                     {error && (
                       <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
                         <span className="font-semibold">Error:</span> {error}
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <Button
                         onClick={generateCode}
                         disabled={loading || cards.length === 0}
@@ -428,6 +625,16 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
                       >
                         <QrCode className="w-5 h-5 mr-2" />
                         {loading ? "Generating..." : "Generate Code"}
+                      </Button>
+
+                      <Button
+                        onClick={scanCustomerQr}
+                        disabled={cards.length === 0}
+                        variant="outline"
+                        className="h-12 border-2"
+                      >
+                        <QrCode className="w-5 h-5 mr-2" />
+                        Scan Customer QR
                       </Button>
 
                       <Button
@@ -440,11 +647,6 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
                         {downloadingOffline ? "Generating..." : "Download 8 Tickets"}
                       </Button>
                     </div>
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
-                      <p className="font-semibold mb-1">💡 Quick Tip</p>
-                      <p>Offline stamps are perfect for events or areas without internet. Print 8 tickets at once!</p>
-                    </div>
                   </CardContent>
                 </Card>
               ) : (
@@ -456,10 +658,15 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
                       </div>
                       <div>
                         <CardTitle>Code Generated Successfully! 🎉</CardTitle>
-                        <p className="text-sm text-gray-600 mt-1">Generated on {code?.created_at}</p>
+                          <p className="text-sm text-gray-600 mt-1">Generated on {code?.created_at}</p>
+                          {code?.number_of_stamps && (
+                            <p className="text-sm font-semibold text-gray-700 mt-1">
+                              Number of Stamps: {code.number_of_stamps}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
+                    </CardHeader>
                   <CardContent className="p-6 space-y-6">
                     <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
                       <div className="flex flex-col items-center">
@@ -496,10 +703,31 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
                       </Select>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="number-of-stamps-new" className="text-sm font-semibold text-gray-700 mb-2 block">
+                        Number of Stamps
+                      </Label>
+                      <Input
+                        id="number-of-stamps-new"
+                        type="number"
+                        min="1"
+                        value={numberOfStamps}
+                        onChange={(event) => setNumberOfStamps(parseInt(event.target.value) || 0)}
+                        className="h-12"
+                      />
+                      {numberOfStampsError && (
+                        <p className="mt-1 text-sm text-red-600">{numberOfStampsError}</p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <Button onClick={generateNewCode} className="h-12 bg-gradient-to-r from-blue-600 to-indigo-600">
                         <QrCode className="w-5 h-5 mr-2" />
                         Generate New
+                      </Button>
+                      <Button onClick={scanCustomerQr} disabled={cards.length === 0} variant="outline" className="h-12 border-2">
+                        <QrCode className="w-5 h-5 mr-2" />
+                        Scan Customer QR
                       </Button>
                       <Button onClick={downloadOfflineStamps} disabled={downloadingOffline} variant="outline" className="h-12 border-2">
                         <Ticket className="w-5 h-5 mr-2" />
@@ -697,6 +925,7 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
                         <TableRow className="bg-gray-50">
                           <TableHead className="font-semibold">Card</TableHead>
                           <TableHead className="font-semibold">Code</TableHead>
+                          <TableHead className="font-semibold">Stamps</TableHead>
                           <TableHead className="font-semibold">Customer</TableHead>
                           <TableHead className="font-semibold">Status</TableHead>
                           <TableHead className="font-semibold">Created</TableHead>
@@ -708,6 +937,7 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
                             <TableRow key={stampCode.id} className="hover:bg-gray-50">
                               <TableCell className="font-medium">{stampCode.loyalty_card.name}</TableCell>
                               <TableCell className="font-mono text-sm">{stampCode.code}</TableCell>
+                              <TableCell>{stampCode.number_of_stamps}</TableCell>
                               <TableCell>
                                 {stampCode.customer ? (
                                   <div>
@@ -724,7 +954,7 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-12 text-gray-500">
+                            <TableCell colSpan={6} className="text-center py-12 text-gray-500">
                               <Ticket className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                               <p>No stamp codes found.</p>
                             </TableCell>
@@ -743,7 +973,9 @@ export default function Index({ code, cards = [], loyalty_card_id, perkClaims = 
                             <div className="flex items-start justify-between">
                               <div>
                                 <p className="font-mono font-semibold text-base">{stampCode.code}</p>
-                                <p className="text-xs text-gray-500 mt-1">{stampCode.loyalty_card.name}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {stampCode.loyalty_card.name} • {stampCode.number_of_stamps} {stampCode.number_of_stamps === 1 ? "stamp" : "stamps"}
+                                </p>
                               </div>
                               {getStatusBadge(stampCode)}
                             </div>

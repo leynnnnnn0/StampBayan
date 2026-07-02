@@ -5,9 +5,11 @@ use App\Models\Customer;
 use App\Models\LoyaltyCard;
 use App\Models\Perk;
 use App\Models\PerkClaim;
+use App\Models\Staff;
 use App\Models\StampCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
@@ -164,4 +166,46 @@ test('business users can cancel an accidentally issued stamp', function () {
 
     expect($stamp->refresh()->trashed())->toBeTrue();
     expect(PerkClaim::where('customer_id', $customer->id)->exists())->toBeFalse();
+});
+
+test('staff users can scan a customer qr and issue selected stamps', function () {
+    $business = Business::factory()->create();
+    $staff = Staff::factory()->for($business)->create();
+    $customer = Customer::factory()->for($business)->create();
+    $card = LoyaltyCard::factory()->for($business)->create();
+
+    $signature = substr(hash_hmac('sha256', "{$customer->id}|{$business->id}", config('app.key')), 0, 24);
+    $customerQr = "stampbayan:customer:{$customer->id}:{$business->id}:{$signature}";
+
+    $this->actingAs($staff, 'staff')
+        ->post(route('staff.scan-customer'), [
+            'customer_qr' => $customerQr,
+            'loyalty_card_id' => $card->id,
+            'number_of_stamps' => 4,
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('stamp_codes', [
+        'business_id' => $business->id,
+        'customer_id' => $customer->id,
+        'loyalty_card_id' => $card->id,
+        'number_of_stamps' => 4,
+        'is_expired' => false,
+    ]);
+});
+
+test('active staff users can log in without remember token support', function () {
+    $business = Business::factory()->create();
+    $staff = Staff::factory()->for($business)->create([
+        'username' => 'batangas-staff',
+        'password' => Hash::make('password'),
+    ]);
+
+    $this->post('/staff/login', [
+        'username' => 'batangas-staff',
+        'password' => 'password',
+    ])
+        ->assertRedirect(route('staff.dashboard'));
+
+    $this->assertAuthenticatedAs($staff, 'staff');
 });

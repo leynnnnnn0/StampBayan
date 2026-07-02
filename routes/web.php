@@ -150,6 +150,7 @@ Route::name('staff.')->prefix('staff')->group(function () {
         Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/generate-offline', [StaffDashboardController::class, 'generateOfflineStamps'])->name('generate-offline');
+        Route::post('/scan-customer', [StaffDashboardController::class, 'recordCustomerScan'])->name('scan-customer');
         Route::post('/perk-claims/{perkClaim}/redeem', [StaffDashboardController::class, 'markAsRedeemed'])->name('perk-claims.redeem');
         Route::post('/perk-claims/{perkClaim}/undo', [StaffDashboardController::class, 'undoRedeem'])->name('perk-claims.undo');
 
