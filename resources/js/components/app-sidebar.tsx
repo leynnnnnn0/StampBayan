@@ -73,7 +73,7 @@ const footerNavItems: NavItem[] = [
 
 export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
-    const isAdmin = auth.user?.id === 1;
+    const isAdmin = auth.user?.role === 'admin';
     const navItems: NavItem[] = isAdmin
         ? [
               {

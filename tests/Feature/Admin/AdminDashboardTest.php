@@ -12,14 +12,16 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
-test('user id one can view platform dashboard metrics', function () {
+test('admin users can view platform dashboard metrics', function () {
     $this->withoutVite();
 
-    $admin = User::factory()->withoutTwoFactor()->create();
     $owner = User::factory()->create([
         'role' => 'business',
         'username' => 'cafe-owner',
         'email' => 'owner@example.com',
+    ]);
+    $admin = User::factory()->withoutTwoFactor()->create([
+        'role' => 'admin',
     ]);
     $business = Business::factory()->for($owner)->create([
         'name' => 'Cafe Uno',
@@ -85,23 +87,43 @@ test('user id one can view platform dashboard metrics', function () {
         );
 });
 
-test('users other than id one cannot view the admin dashboard', function () {
-    User::factory()->create();
-    $user = User::factory()->create();
+test('business users cannot view the admin dashboard regardless of user id', function () {
+    $user = User::factory()->create([
+        'role' => 'business',
+    ]);
 
     $this->actingAs($user)
         ->get(route('admin.dashboard'))
         ->assertForbidden();
 });
 
-test('user id one logins redirect to the admin dashboard', function () {
+test('admin logins redirect to the admin dashboard regardless of user id', function () {
+    User::factory()->create([
+        'role' => 'business',
+    ]);
+
     $admin = User::factory()->withoutTwoFactor()->create([
         'email' => 'admin@example.com',
         'password' => Hash::make('password'),
+        'role' => 'admin',
     ]);
 
     $this->post('/login', [
         'email' => $admin->email,
         'password' => 'password',
     ])->assertRedirect(route('admin.dashboard'));
+});
+
+test('first user business logins redirect to the business dashboard', function () {
+    $owner = User::factory()->withoutTwoFactor()->create([
+        'email' => 'first-owner@example.com',
+        'password' => Hash::make('password'),
+        'role' => 'business',
+    ]);
+    Business::factory()->for($owner)->create();
+
+    $this->post('/login', [
+        'email' => $owner->email,
+        'password' => 'password',
+    ])->assertRedirect(route('dashboard'));
 });
