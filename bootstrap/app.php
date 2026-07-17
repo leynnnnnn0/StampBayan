@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+            'admin.owner' => \App\Http\Middleware\EnsureAdminUser::class,
         ]);
         
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);

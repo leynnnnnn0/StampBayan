@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Business\StaffController;
 use App\Http\Controllers\Business\CardTempalateController;
 use App\Http\Controllers\Business\CustomerController;
@@ -48,6 +49,10 @@ Route::get('/pricing', function () {
 Route::get('/documentation', [DocumentationController::class, 'index']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware('admin.owner')->group(function () {
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    });
+
     Route::prefix('business')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

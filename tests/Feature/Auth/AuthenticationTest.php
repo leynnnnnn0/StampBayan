@@ -13,6 +13,7 @@ test('login screen can be rendered', function () {
 });
 
 test('users can authenticate using the login screen', function () {
+    User::factory()->withoutTwoFactor()->create();
     $user = User::factory()->withoutTwoFactor()->create();
 
     $response = $this->post(route('login.store'), [

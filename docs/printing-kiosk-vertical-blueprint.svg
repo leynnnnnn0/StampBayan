@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1500" viewBox="0 0 1100 1500">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2f70b8" stroke-width="1" opacity="0.35"/>
+    </pattern>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#f7d56b"/>
+    </marker>
+    <style>
+      .bg { fill: #0a3d75; }
+      .grid { fill: url(#grid); }
+      .cabinet { fill: none; stroke: #f4fbff; stroke-width: 5; }
+      .module { fill: rgba(255,255,255,0.04); stroke: #f4fbff; stroke-width: 4; }
+      .door { fill: none; stroke: #aee8ff; stroke-width: 4; stroke-dasharray: 10 8; }
+      .floor { stroke: #ffdf7a; stroke-width: 7; stroke-linecap: round; }
+      .open { stroke: #ff8f66; stroke-width: 7; stroke-linecap: round; }
+      .paper { fill: #f7ead2; stroke: #fff7d1; stroke-width: 3; }
+      .label { fill: #f4fbff; font-family: Arial, Helvetica, sans-serif; font-size: 29px; font-weight: 700; }
+      .small { fill: #d8efff; font-family: Arial, Helvetica, sans-serif; font-size: 22px; }
+      .note { fill: #ffe69a; font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 700; }
+      .arrow { fill: none; stroke: #f7d56b; stroke-width: 6; marker-end: url(#arrow); }
+      .thin { fill: none; stroke: #aee8ff; stroke-width: 3; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1100" height="1500"/>
+  <rect class="grid" width="1100" height="1500"/>
+
+  <text x="60" y="80" class="label">Vertical Gravity-Drop Printing Kiosk Concept</text>
+  <text x="60" y="115" class="small">Side cutaway: printer, catcher, and lockers are all mounted in the same rotated orientation.</text>
+
+  <rect x="305" y="155" width="470" height="1220" rx="18" class="cabinet"/>
+  <text x="805" y="205" class="small">Tall cabinet frame</text>
+  <path d="M780 200 L735 220" class="thin"/>
+
+  <!-- Printer -->
+  <g transform="translate(395 210)">
+    <polygon points="0,0 300,0 340,70 40,70" class="module"/>
+    <polygon points="40,70 340,70 295,155 0,155" class="module"/>
+    <text x="75" y="53" class="label">PRINTER</text>
+    <text x="58" y="108" class="small">rotated 180 degrees</text>
+    <rect x="105" y="130" width="120" height="18" class="paper"/>
+  </g>
+  <text x="85" y="300" class="small">Paper output drops into catcher</text>
+  <path d="M640 365 C640 410 640 430 640 470" class="arrow"/>
+
+  <!-- Catcher -->
+  <g transform="translate(395 430)">
+    <polygon points="0,0 300,0 340,80 40,80" class="module"/>
+    <polygon points="40,80 340,80 300,210 0,210" class="module"/>
+    <text x="50" y="55" class="label">CATCHER</text>
+    <text x="42" y="105" class="small">stores full print job</text>
+    <rect x="100" y="125" width="130" height="45" class="paper"/>
+    <line x1="38" y1="210" x2="302" y2="210" class="open"/>
+    <text x="-245" y="200" class="note">hinged bottom floor open</text>
+  </g>
+  <path d="M640 640 C640 690 640 715 640 750" class="arrow"/>
+
+  <!-- Locker 1 pass-through -->
+  <g transform="translate(395 710)">
+    <polygon points="0,0 300,0 340,70 40,70" class="module"/>
+    <polygon points="40,70 340,70 300,190 0,190" class="module"/>
+    <rect x="235" y="55" width="70" height="105" class="door"/>
+    <text x="45" y="55" class="label">LOCKER 1</text>
+    <text x="43" y="100" class="small">pass-through</text>
+    <line x1="38" y1="190" x2="302" y2="190" class="open"/>
+  </g>
+  <text x="805" y="845" class="small">Locker 1 floor open</text>
+  <path d="M638 900 C638 940 638 965 638 1005" class="arrow"/>
+
+  <!-- Locker 2 target -->
+  <g transform="translate(395 980)">
+    <polygon points="0,0 300,0 340,70 40,70" class="module"/>
+    <polygon points="40,70 340,70 300,190 0,190" class="module"/>
+    <rect x="235" y="55" width="70" height="105" class="door"/>
+    <text x="45" y="55" class="label">LOCKER 2</text>
+    <text x="43" y="100" class="small">assigned locker</text>
+    <rect x="95" y="105" width="130" height="45" class="paper"/>
+    <line x1="38" y1="190" x2="302" y2="190" class="floor"/>
+  </g>
+  <text x="805" y="1098" class="note">closed floor catches stack</text>
+
+  <!-- Lower lockers -->
+  <g transform="translate(395 1220)">
+    <polygon points="0,0 300,0 340,55 40,55" class="module"/>
+    <polygon points="40,55 340,55 310,120 10,120" class="module"/>
+    <text x="55" y="48" class="small">Locker 3 / 4 below</text>
+  </g>
+
+  <!-- Admin bin -->
+  <g transform="translate(395 1345)">
+    <polygon points="0,0 300,0 345,65 45,65" class="module"/>
+    <text x="45" y="45" class="label">ADMIN BIN</text>
+  </g>
+
+  <!-- Controller block -->
+  <rect x="60" y="1210" width="250" height="145" rx="12" class="module"/>
+  <text x="85" y="1260" class="label">ESP32</text>
+  <text x="85" y="1295" class="small">servo latches</text>
+  <text x="85" y="1325" class="small">paper sensors</text>
+  <path d="M310 1275 C350 1250 365 1160 395 1080" class="thin"/>
+
+  <rect x="790" y="1210" width="250" height="145" rx="12" class="module"/>
+  <text x="818" y="1260" class="label">MAIN APP</text>
+  <text x="818" y="1295" class="small">payment + queue</text>
+  <text x="818" y="1325" class="small">printer control</text>
+  <path d="M790 1278 C735 1255 715 410 690 350" class="thin"/>
+
+  <text x="60" y="1435" class="small">Routing example shown: catcher opens, Locker 1 opens to pass through, Locker 2 stays closed and receives the papers.</text>
+</svg>

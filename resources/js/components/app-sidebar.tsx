@@ -10,9 +10,9 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { AwardIcon, BookOpen, Code2Icon, IdCard, LayoutGrid, QrCodeIcon, StampIcon, StoreIcon, TicketIcon, Users2Icon } from 'lucide-react';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
+import { AwardIcon, BookOpen, Code2Icon, IdCard, LayoutDashboard, LayoutGrid, QrCodeIcon, StampIcon, StoreIcon, TicketIcon, Users2Icon } from 'lucide-react';
 import LOGO from '../../images/mainLogo.png';
 
 const mainNavItems: NavItem[] = [
@@ -72,7 +72,18 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const navItems: NavItem[] = mainNavItems;
+    const { auth } = usePage<SharedData>().props;
+    const isAdmin = auth.user?.id === 1;
+    const navItems: NavItem[] = isAdmin
+        ? [
+              {
+                  title: 'Admin Dashboard',
+                  href: '/admin/dashboard',
+                  icon: LayoutDashboard,
+              },
+          ]
+        : mainNavItems;
+    const logoHref = isAdmin ? '/admin/dashboard' : '/business/dashboard';
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -80,7 +91,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/business/dashboard" prefetch>
+                            <Link href={logoHref} prefetch>
                                 <img src={LOGO} alt="logo" className='w-full' />
                             </Link>
                         </SidebarMenuButton>
