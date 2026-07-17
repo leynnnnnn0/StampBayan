@@ -10,6 +10,7 @@ use App\Models\StampCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -208,4 +209,51 @@ test('active staff users can log in without remember token support', function ()
         ->assertRedirect(route('staff.dashboard'));
 
     $this->assertAuthenticatedAs($staff, 'staff');
+});
+
+test('staff reward and history lists paginate independently', function () {
+    $business = Business::factory()->create();
+    $staff = Staff::factory()->for($business)->create();
+    $customer = Customer::factory()->for($business)->create();
+    $card = LoyaltyCard::factory()->for($business)->create([
+        'valid_until' => now()->addMonth(),
+    ]);
+    $perk = Perk::factory()->for($card, 'loyaltyCard')->create();
+
+    foreach (range(1, 12) as $index) {
+        PerkClaim::create([
+            'customer_id' => $customer->id,
+            'loyalty_card_id' => $card->id,
+            'perk_id' => $perk->id,
+            'stamps_at_claim' => $index,
+            'is_redeemed' => false,
+        ]);
+    }
+
+    foreach (range(1, 13) as $index) {
+        StampCode::create([
+            'user_id' => $staff->id,
+            'business_id' => $business->id,
+            'loyalty_card_id' => $card->id,
+            'code' => sprintf('STAFF-%02d', $index),
+            'is_expired' => false,
+            'is_offline_code' => false,
+            'number_of_stamps' => 1,
+        ]);
+    }
+
+    $this->actingAs($staff, 'staff')
+        ->get(route('staff.dashboard', [
+            'rewards_page' => 2,
+            'history_page' => 2,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Staff/Dashboard/Index')
+            ->where('perkClaims.current_page', 2)
+            ->where('perkClaims.total', 12)
+            ->has('perkClaims.data', 2)
+            ->where('stampCodes.current_page', 2)
+            ->where('stampCodes.total', 13)
+            ->has('stampCodes.data', 3));
 });

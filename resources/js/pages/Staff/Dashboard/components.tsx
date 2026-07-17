@@ -27,6 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import Pagination from '@/components/pagination';
 import {
   Award,
   Calendar,
@@ -43,6 +44,7 @@ import {
 import type {
   GeneratedStampCode,
   LoyaltyCard,
+  PaginatedList,
   PerkClaim,
   StaffNavItem,
   StaffStats,
@@ -233,7 +235,7 @@ export function IssueStampTab({
   const hasGeneratedCode = !!code?.success;
 
   return (
-    <Card className="overflow-hidden border-0 shadow-lg">
+    <Card className="gap-0 overflow-hidden border-0 py-0 shadow-lg">
       {hasGeneratedCode ? (
         <>
           <CardHeader className="border-b bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-4 sm:px-6">
@@ -349,6 +351,7 @@ export function IssueStampTab({
 
 type PerkClaimsTabProps = {
   claims: PerkClaim[];
+  pagination: PaginatedList<PerkClaim>;
   search: string;
   onSearchChange: (value: string) => void;
   onViewDetails: (claim: PerkClaim) => void;
@@ -356,9 +359,9 @@ type PerkClaimsTabProps = {
   onUndoRedeem: (claim: PerkClaim) => void;
 };
 
-export function PerkClaimsTab({ claims, search, onSearchChange, onViewDetails, onRedeem, onUndoRedeem }: PerkClaimsTabProps) {
+export function PerkClaimsTab({ claims, pagination, search, onSearchChange, onViewDetails, onRedeem, onUndoRedeem }: PerkClaimsTabProps) {
   return (
-    <Card className="overflow-hidden border-0 shadow-lg">
+    <Card className="gap-0 overflow-hidden border-0 py-0 shadow-lg">
       <CardHeader className="px-4 py-4 sm:px-6">
         <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
           <Award className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -486,6 +489,12 @@ export function PerkClaimsTab({ claims, search, onSearchChange, onViewDetails, o
             </div>
           )}
         </div>
+
+        <Pagination
+          data={pagination}
+          pageName="rewards_page"
+          excludeParams={['loyalty_card_id', 'number_of_stamps']}
+        />
       </CardContent>
     </Card>
   );
@@ -493,15 +502,16 @@ export function PerkClaimsTab({ claims, search, onSearchChange, onViewDetails, o
 
 type StampCodesTabProps = {
   codes: StampCodeRecord[];
+  pagination: PaginatedList<StampCodeRecord>;
   search: string;
   onSearchChange: (value: string) => void;
   formatDate: (date: string | null) => string;
   getStatusBadge: (stampCode: StampCodeRecord) => React.ReactNode;
 };
 
-export function StampCodesTab({ codes, search, onSearchChange, formatDate, getStatusBadge }: StampCodesTabProps) {
+export function StampCodesTab({ codes, pagination, search, onSearchChange, formatDate, getStatusBadge }: StampCodesTabProps) {
   return (
-    <Card className="overflow-hidden border-0 shadow-lg">
+    <Card className="gap-0 overflow-hidden border-0 py-0 shadow-lg">
       <CardHeader className="px-4 py-4 sm:px-6">
         <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
           <Ticket className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -619,6 +629,12 @@ export function StampCodesTab({ codes, search, onSearchChange, formatDate, getSt
             </div>
           )}
         </div>
+
+        <Pagination
+          data={pagination}
+          pageName="history_page"
+          excludeParams={['loyalty_card_id', 'number_of_stamps']}
+        />
       </CardContent>
     </Card>
   );
@@ -626,7 +642,7 @@ export function StampCodesTab({ codes, search, onSearchChange, formatDate, getSt
 
 export function AccountTab({ onLogout }: { onLogout: () => void }) {
   return (
-    <Card className="overflow-hidden border-0 shadow-lg">
+    <Card className="gap-0 overflow-hidden border-0 py-0 shadow-lg">
       <CardHeader className="px-4 py-4 sm:px-6">
         <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
           <User className="h-4 w-4 sm:h-5 sm:w-5" />

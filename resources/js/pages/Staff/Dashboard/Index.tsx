@@ -20,6 +20,7 @@ import {
 import type {
   GeneratedStampCode,
   LoyaltyCard,
+  PaginatedList,
   PerkClaim,
   StaffDashboardTab,
   StaffNavItem,
@@ -34,10 +35,25 @@ interface Props {
   code?: GeneratedStampCode;
   cards?: LoyaltyCard[];
   loyalty_card_id?: string;
-  perkClaims?: PerkClaim[];
-  stampCodes?: StampCodeRecord[];
+  perkClaims?: PaginatedList<PerkClaim>;
+  stampCodes?: PaginatedList<StampCodeRecord>;
   stats?: StaffStats;
+  filters?: {
+    perk_search?: string;
+    history_search?: string;
+  };
 }
+
+const emptyPaginatedList = <T,>(): PaginatedList<T> => ({
+  data: [],
+  links: [],
+  current_page: 1,
+  last_page: 1,
+  per_page: 10,
+  total: 0,
+  from: 0,
+  to: 0,
+});
 
 type ScanControls = {
   stop: () => void;
@@ -68,9 +84,10 @@ export default function Index({
   code,
   cards = [],
   loyalty_card_id,
-  perkClaims = [],
-  stampCodes = [],
+  perkClaims = emptyPaginatedList<PerkClaim>(),
+  stampCodes = emptyPaginatedList<StampCodeRecord>(),
   stats,
+  filters = {},
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [downloadingOffline, setDownloadingOffline] = useState(false);
@@ -88,34 +105,14 @@ export default function Index({
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [perkSearch, setPerkSearch] = useState('');
-  const [codeSearch, setCodeSearch] = useState('');
+  const [perkSearch, setPerkSearch] = useState(filters.perk_search || '');
+  const [codeSearch, setCodeSearch] = useState(filters.history_search || '');
   const [activeTab, setActiveTab] = useState<StaffDashboardTab>(readSavedStaffDashboardTab);
   const scanVideoRef = useRef<HTMLVideoElement>(null);
   const scanControlsRef = useRef<ScanControls | null>(null);
   const customerScanSubmittedRef = useRef(false);
-
-  const filteredPerkClaims = useMemo(
-    () =>
-      perkClaims.filter(
-        (claim) =>
-          claim.customer.username.toLowerCase().includes(perkSearch.toLowerCase()) ||
-          claim.perk.reward.toLowerCase().includes(perkSearch.toLowerCase()) ||
-          claim.loyalty_card.name.toLowerCase().includes(perkSearch.toLowerCase()),
-      ),
-    [perkClaims, perkSearch],
-  );
-
-  const filteredStampCodes = useMemo(
-    () =>
-      stampCodes.filter(
-        (codeRecord) =>
-          codeRecord.code.toLowerCase().includes(codeSearch.toLowerCase()) ||
-          codeRecord.customer?.username.toLowerCase().includes(codeSearch.toLowerCase()) ||
-          codeRecord.loyalty_card.name.toLowerCase().includes(codeSearch.toLowerCase()),
-      ),
-    [stampCodes, codeSearch],
-  );
+  const perkSearchInitializedRef = useRef(false);
+  const codeSearchInitializedRef = useRef(false);
 
   const navItems: StaffNavItem[] = useMemo(
     () => [
@@ -124,13 +121,67 @@ export default function Index({
         id: 'perk-claims',
         label: 'Rewards',
         icon: Gift,
-        badge: perkClaims.filter((claim) => !claim.is_redeemed).length || undefined,
+        badge: stats?.available || undefined,
       },
-      { id: 'stamp-codes', label: 'History', icon: History, dot: stampCodes.length > 0 },
+      { id: 'stamp-codes', label: 'History', icon: History, dot: stampCodes.total > 0 },
       { id: 'account', label: 'Account', icon: User },
     ],
-    [perkClaims, stampCodes],
+    [stampCodes.total, stats?.available],
   );
+
+  useEffect(() => {
+    if (!perkSearchInitializedRef.current) {
+      perkSearchInitializedRef.current = true;
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('loyalty_card_id');
+      url.searchParams.delete('number_of_stamps');
+      url.searchParams.delete('rewards_page');
+      url.searchParams.set('tab', 'perk-claims');
+
+      if (perkSearch.trim()) url.searchParams.set('perk_search', perkSearch.trim());
+      else url.searchParams.delete('perk_search');
+
+      router.get(url.toString(), {}, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        only: ['perkClaims', 'filters'],
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [perkSearch]);
+
+  useEffect(() => {
+    if (!codeSearchInitializedRef.current) {
+      codeSearchInitializedRef.current = true;
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('loyalty_card_id');
+      url.searchParams.delete('number_of_stamps');
+      url.searchParams.delete('history_page');
+      url.searchParams.set('tab', 'stamp-codes');
+
+      if (codeSearch.trim()) url.searchParams.set('history_search', codeSearch.trim());
+      else url.searchParams.delete('history_search');
+
+      router.get(url.toString(), {}, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        only: ['stampCodes', 'filters'],
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [codeSearch]);
 
   useEffect(() => {
     try {
@@ -453,7 +504,8 @@ export default function Index({
 
             <TabsContent value="perk-claims" className="space-y-6">
               <PerkClaimsTab
-                claims={filteredPerkClaims}
+                claims={perkClaims.data}
+                pagination={perkClaims}
                 search={perkSearch}
                 onSearchChange={setPerkSearch}
                 onViewDetails={handleViewDetails}
@@ -464,7 +516,8 @@ export default function Index({
 
             <TabsContent value="stamp-codes" className="space-y-6">
               <StampCodesTab
-                codes={filteredStampCodes}
+                codes={stampCodes.data}
+                pagination={stampCodes}
                 search={codeSearch}
                 onSearchChange={setCodeSearch}
                 formatDate={formatDate}

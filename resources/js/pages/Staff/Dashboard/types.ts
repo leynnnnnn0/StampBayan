@@ -1,5 +1,20 @@
 import type { LucideIcon } from 'lucide-react';
 
+export interface PaginatedList<T> {
+  data: T[];
+  links: {
+    url: string | null;
+    label: string;
+    active: boolean;
+  }[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from: number;
+  to: number;
+}
+
 export type StaffDashboardTab = 'issue-stamp' | 'perk-claims' | 'stamp-codes' | 'account';
 
 export interface LoyaltyCard {

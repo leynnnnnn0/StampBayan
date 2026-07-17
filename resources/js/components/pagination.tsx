@@ -21,9 +21,11 @@ export interface PaginationMeta {
 
 interface PaginationProps {
   data: PaginationMeta;
+  pageName?: string;
+  excludeParams?: string[];
 }
 
-export default function Pagination({ data }: PaginationProps) {
+export default function Pagination({ data, pageName = 'page', excludeParams = [] }: PaginationProps) {
   const { from, to, total, current_page, last_page } = data;
 
   if (last_page <= 1) return null;
@@ -33,7 +35,8 @@ export default function Pagination({ data }: PaginationProps) {
     
     // Construct URL with page parameter - adjust based on your routing
     const url = new URL(window.location.href);
-    url.searchParams.set('page', page.toString());
+    excludeParams.forEach((parameter) => url.searchParams.delete(parameter));
+    url.searchParams.set(pageName, page.toString());
     
     router.get(url.toString(), {}, { preserveState: true, preserveScroll: true });
   };

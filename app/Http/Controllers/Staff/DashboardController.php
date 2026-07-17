@@ -47,6 +47,9 @@ class DashboardController extends Controller
             }
         }
 
+        $perkSearch = trim($request->string('perk_search')->toString());
+        $historySearch = trim($request->string('history_search')->toString());
+
         // Get perk claims
         $perkClaims = PerkClaim::with([
                 'customer:id,username,email',
@@ -57,16 +60,39 @@ class DashboardController extends Controller
             ->whereHas('loyalty_card', function ($query) use ($businessId) {
                 $query->where('business_id', $businessId);
             })
+            ->when($perkSearch !== '', function ($query) use ($perkSearch) {
+                $query->where(function ($query) use ($perkSearch) {
+                    $query->whereHas('customer', function ($query) use ($perkSearch) {
+                        $query->where('username', 'like', "%{$perkSearch}%")
+                            ->orWhere('email', 'like', "%{$perkSearch}%");
+                    })->orWhereHas('perk', function ($query) use ($perkSearch) {
+                        $query->where('reward', 'like', "%{$perkSearch}%");
+                    })->orWhereHas('loyalty_card', function ($query) use ($perkSearch) {
+                        $query->where('name', 'like', "%{$perkSearch}%");
+                    });
+                });
+            })
             ->latest()
-            ->limit(50)
-            ->get();
+            ->paginate(10, ['*'], 'rewards_page')
+            ->withQueryString();
 
         // Get stamp codes
         $stampCodes = StampCode::with(['loyalty_card:id,name', 'customer:id,username,email'])
             ->where('business_id', $businessId)
+            ->when($historySearch !== '', function ($query) use ($historySearch) {
+                $query->where(function ($query) use ($historySearch) {
+                    $query->where('code', 'like', "%{$historySearch}%")
+                        ->orWhereHas('customer', function ($query) use ($historySearch) {
+                            $query->where('username', 'like', "%{$historySearch}%")
+                                ->orWhere('email', 'like', "%{$historySearch}%");
+                        })->orWhereHas('loyalty_card', function ($query) use ($historySearch) {
+                            $query->where('name', 'like', "%{$historySearch}%");
+                        });
+                });
+            })
             ->latest()
-            ->limit(50)
-            ->get();
+            ->paginate(10, ['*'], 'history_page')
+            ->withQueryString();
 
         // Get stats
         $stats = [
@@ -88,6 +114,10 @@ class DashboardController extends Controller
             'perkClaims' => $perkClaims,
             'stampCodes' => $stampCodes,
             'stats' => $stats,
+            'filters' => [
+                'perk_search' => $perkSearch,
+                'history_search' => $historySearch,
+            ],
         ]);
     }
 
