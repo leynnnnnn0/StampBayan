@@ -21,10 +21,8 @@ class CardTempalateController extends Controller
             ->latest()
             ->get();
 
-
-
         return Inertia::render('Business/CardTemplate/Index', [
-            'cardTemplates' => $cardTemplates
+            'cardTemplates' => $cardTemplates,
         ]);
     }
 
@@ -35,17 +33,16 @@ class CardTempalateController extends Controller
             ->findOrFail($id);
 
         return Inertia::render('Business/CardTemplate/Show', [
-            'cardTemplate' => $cardTemplate
+            'cardTemplate' => $cardTemplate,
         ]);
     }
 
-
     public function update(Request $request, $id)
     {
-      
+
         $validated = $request->validate([
             'logo' => 'nullable|string',
-            'name' => 'required|string|max:255|unique:loyalty_cards,name,' . $id . ',id,business_id,' . Auth::user()->business->id,
+            'name' => 'required|string|max:255|unique:loyalty_cards,name,'.$id.',id,business_id,'.Auth::user()->business->id,
             'heading' => 'required|string|max:255',
             'subheading' => 'nullable|string|max:255',
             'valid_until' => 'required',
@@ -75,9 +72,9 @@ class CardTempalateController extends Controller
 
             // Handle Logo Upload
             $logoPath = $loyaltyCard->logo;
-            if (!empty($validated['logo'])) {
+            if (! empty($validated['logo'])) {
                 // Check if it's a new base64 image (not existing path)
-                if ($validated['logo'] != "/" . $logoPath) {
+                if ($validated['logo'] != '/'.$logoPath) {
                     // Delete old logo if exists
                     if ($logoPath && file_exists(public_path($logoPath))) {
                         unlink(public_path($logoPath));
@@ -97,8 +94,8 @@ class CardTempalateController extends Controller
 
             // Handle Stamp Image Upload
             $stampImagePath = $loyaltyCard->stampImage;
-            if (!empty($validated['stampImage'])) {
-                if ($validated['stampImage'] != "/" . $stampImagePath) {
+            if (! empty($validated['stampImage'])) {
+                if ($validated['stampImage'] != '/'.$stampImagePath) {
                     if ($stampImagePath && file_exists(public_path($stampImagePath))) {
                         unlink(public_path($stampImagePath));
                     }
@@ -113,8 +110,8 @@ class CardTempalateController extends Controller
 
             // Handle Background Image Upload
             $backgroundImagePath = $loyaltyCard->backgroundImage;
-            if (!empty($validated['backgroundImage'])) {
-                if ($validated['backgroundImage'] != "/" . $backgroundImagePath) {
+            if (! empty($validated['backgroundImage'])) {
+                if ($validated['backgroundImage'] != '/'.$backgroundImagePath) {
                     if ($backgroundImagePath && file_exists(public_path($backgroundImagePath))) {
                         unlink(public_path($backgroundImagePath));
                     }
@@ -188,8 +185,9 @@ class CardTempalateController extends Controller
             return redirect()->route('card-templates.index')->with('success', 'Card Template updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Card template update failed: ' . $e->getMessage());
-            return redirect()->back()->withErrors(['error' => 'Failed to update card template: ' . $e->getMessage()])->withInput();
+            Log::error('Card template update failed: '.$e->getMessage());
+
+            return redirect()->back()->withErrors(['error' => 'Failed to update card template: '.$e->getMessage()])->withInput();
         }
     }
 
@@ -205,7 +203,7 @@ class CardTempalateController extends Controller
             ->findOrFail($id);
 
         return Inertia::render('Business/CardTemplate/Edit', [
-            'cardTemplate' => $cardTemplate
+            'cardTemplate' => $cardTemplate,
         ]);
     }
 
@@ -216,7 +214,7 @@ class CardTempalateController extends Controller
         // }
         $validated = $request->validate([
             'logo' => 'nullable|string',
-            'name' => 'required|string|max:255|unique:loyalty_cards,name,NULL,id,business_id,' . Auth::user()->business->id,
+            'name' => 'required|string|max:255|unique:loyalty_cards,name,NULL,id,business_id,'.Auth::user()->business->id,
             'heading' => 'required|string|max:255',
             'subheading' => 'nullable|string|max:255',
             'valid_until' => 'required',
@@ -245,19 +243,19 @@ class CardTempalateController extends Controller
 
             // Handle Logo Upload
             $logoPath = null;
-            if (!empty($validated['logo'])) {
+            if (! empty($validated['logo'])) {
                 $logoPath = $this->uploadBase64Image($validated['logo'], 'card-logos');
             }
 
             // Handle Stamp Image Upload
             $stampImagePath = null;
-            if (!empty($validated['stampImage'])) {
+            if (! empty($validated['stampImage'])) {
                 $stampImagePath = $this->uploadBase64Image($validated['stampImage'], 'stamp-images');
             }
 
             // Handle Background Image Upload
             $backgroundImagePath = null;
-            if (!empty($validated['backgroundImage'])) {
+            if (! empty($validated['backgroundImage'])) {
                 $backgroundImagePath = $this->uploadBase64Image($validated['backgroundImage'], 'card-backgrounds');
             }
 
@@ -281,7 +279,7 @@ class CardTempalateController extends Controller
             ]);
 
             // Create perks if provided
-            if (!empty($validated['perks'])) {
+            if (! empty($validated['perks'])) {
                 $loyaltyCard->perks()->createMany($validated['perks']);
             }
 
@@ -290,7 +288,8 @@ class CardTempalateController extends Controller
             return redirect()->route('card-templates.index')->with('success', 'Card Template created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Failed to create card template: ' . $e->getMessage()])->withInput();
+
+            return redirect()->back()->withErrors(['error' => 'Failed to create card template: '.$e->getMessage()])->withInput();
         }
     }
 
@@ -302,30 +301,21 @@ class CardTempalateController extends Controller
         try {
             $loyaltyCard = Auth::user()->business->loyaltyCards()->findOrFail($id);
 
-            if ($loyaltyCard->logo && file_exists(public_path($loyaltyCard->logo))) {
-                unlink(public_path($loyaltyCard->logo));
-            }
-            if ($loyaltyCard->stampImage && file_exists(public_path($loyaltyCard->stampImage))) {
-                unlink(public_path($loyaltyCard->stampImage));
-            }
-            if ($loyaltyCard->backgroundImage && file_exists(public_path($loyaltyCard->backgroundImage))) {
-                unlink(public_path($loyaltyCard->backgroundImage));
-            }
-
             $loyaltyCard->delete();
 
             return redirect()->route('card-templates.index')->with('success', 'Card Template deleted successfully.');
         } catch (\Exception $e) {
-            Log::error('Card template deletion failed: ' . $e->getMessage());
-            return redirect()->back()->withErrors(['error' => 'Failed to delete card template: ' . $e->getMessage()]);
+            Log::error('Card template deletion failed: '.$e->getMessage());
+
+            return redirect()->back()->withErrors(['error' => 'Failed to delete card template: '.$e->getMessage()]);
         }
     }
 
     /**
      * Upload base64 image to public folder
      *
-     * @param string $base64Image
-     * @param string $folder
+     * @param  string  $base64Image
+     * @param  string  $folder
      * @return string|null
      */
     private function uploadBase64Image($base64Image, $folder)
@@ -345,32 +335,33 @@ class CardTempalateController extends Controller
                 $extension = strtolower($type[1]); // jpg, png, gif, etc.
 
                 // Validate image type
-                if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                if (! in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
                     throw new \Exception('Invalid image type');
                 }
 
                 // Generate unique filename
-                $filename = uniqid() . '_' . time() . '.' . $extension;
+                $filename = uniqid().'_'.time().'.'.$extension;
 
                 // Create directory if it doesn't exist
                 $directory = public_path($folder);
-                if (!file_exists($directory)) {
+                if (! file_exists($directory)) {
                     mkdir($directory, 0755, true);
                 }
 
                 // Full path
-                $filePath = $directory . '/' . $filename;
+                $filePath = $directory.'/'.$filename;
 
                 // Save the image
                 file_put_contents($filePath, $imageData);
 
                 // Return the relative path for database storage
-                return $folder . '/' . $filename;
+                return $folder.'/'.$filename;
             }
 
             return null;
         } catch (\Exception $e) {
-            Log::error('Image upload failed: ' . $e->getMessage());
+            Log::error('Image upload failed: '.$e->getMessage());
+
             return null;
         }
     }

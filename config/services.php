@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'paymongo' => [
+        'secret_key' => env('PAYMONGO_SECRET_KEY'),
+        'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
+        'livemode' => env('PAYMONGO_LIVEMODE', false),
+    ],
+
+    'facebook' => [
+        'support_url' => env('FACEBOOK_SUPPORT_URL', 'https://www.facebook.com/profile.php?id=61584319949414'),
+    ],
+
 ];

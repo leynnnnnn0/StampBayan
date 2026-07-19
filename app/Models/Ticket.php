@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ticket extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'business_id',
@@ -16,7 +17,7 @@ class Ticket extends Model
         'description',
         'images',
         'status',
-        'priority'
+        'priority',
     ];
 
     protected $casts = [
@@ -43,7 +44,7 @@ class Ticket extends Model
     public static function generateTicketNumber()
     {
         do {
-            $number = 'TKT-' . strtoupper(substr(md5(uniqid()), 0, 8));
+            $number = 'TKT-'.strtoupper(substr(md5(uniqid()), 0, 8));
         } while (self::where('ticket_number', $number)->exists());
 
         return $number;
@@ -51,7 +52,7 @@ class Ticket extends Model
 
     public function getStatusColorAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'open' => 'blue',
             'in_progress' => 'yellow',
             'resolved' => 'green',
@@ -62,7 +63,7 @@ class Ticket extends Model
 
     public function getPriorityColorAttribute()
     {
-        return match($this->priority) {
+        return match ($this->priority) {
             'low' => 'gray',
             'medium' => 'blue',
             'high' => 'orange',

@@ -1,19 +1,21 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Business\StaffController;
+use App\Http\Controllers\Business\BackupController;
 use App\Http\Controllers\Business\CardTempalateController;
 use App\Http\Controllers\Business\CustomerController;
 use App\Http\Controllers\Business\DashboardController;
-use App\Http\Controllers\Business\QRStudioController;
 use App\Http\Controllers\Business\IssueStampController;
 use App\Http\Controllers\Business\PerkClaimController;
+use App\Http\Controllers\Business\QRStudioController;
+use App\Http\Controllers\Business\StaffController;
 use App\Http\Controllers\Business\StampCodeController;
 use App\Http\Controllers\Business\TicketController;
 use App\Http\Controllers\ChatBotController;
 use App\Http\Controllers\Customer\CustomerAuthController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\DocumentationController;
+use App\Http\Controllers\PayMongoWebhookController;
 use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
 use App\Http\Controllers\Staff\StaffAuthController;
 use App\Http\Controllers\SuggestionController;
@@ -35,6 +37,7 @@ Route::get('/sitemap.xml', function () {
 Route::post('/api/chat', [ChatBotController::class, 'chat'])->middleware('auth');
 
 Route::post('/suggestions', [SuggestionController::class, 'store'])->name('suggestions.store');
+Route::post('/webhooks/paymongo', PayMongoWebhookController::class)->name('webhooks.paymongo');
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -71,8 +74,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/stamp-codes', [StampCodeController::class, 'index']);
         Route::post('/stamp-codes/{stampCodeId}/cancel', [StampCodeController::class, 'cancel']);
 
-
-
         Route::get('/perk-claims', [PerkClaimController::class, 'index'])->name('perk-claims.index');
         Route::post('/perk-claims/{perkClaim}/redeem', [PerkClaimController::class, 'markAsRedeemed'])->name('perk-claims.redeem');
         Route::post('/perk-claims/{perkClaim}/undo', [PerkClaimController::class, 'undoRedeem'])->name('perk-claims.undo');
@@ -81,6 +82,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
         Route::get('/tickets/{id}', [TicketController::class, 'show'])->name('tickets.show');
         Route::post('/tickets/{id}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
+
+        Route::get('/backups', [BackupController::class, 'index'])->name('business.backups.index');
+        Route::get('/backups/basic-export', [BackupController::class, 'downloadBasic'])->name('business.backups.basic-export');
+        Route::post('/backups/checkout', [BackupController::class, 'checkout'])->name('business.backups.checkout');
     });
 });
 
@@ -128,12 +133,14 @@ Route::prefix('customer')->name('customer.')->group(function () {
     // Email Verification Handler
     Route::get('/customer/verify-email/{id}/{hash}', function (EmailVerificationRequest $request) {
         $request->fulfill();
+
         return redirect()->route('customer.dashboard');
     })->middleware(['auth:customer', 'signed'])->name('customer.verification.verify');
 
     // Resend Verification Email
     Route::post('/customer/email/verification-notification', function (Request $request) {
         $request->user('customer')->sendEmailVerificationNotification();
+
         return back()->with('status', 'verification-link-sent');
     })->middleware(['auth:customer', 'throttle:6,1'])->name('customer.verification.send');
 
@@ -171,7 +178,4 @@ Route::name('staff.')->prefix('staff')->group(function () {
     });
 });
 
-
-
-
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

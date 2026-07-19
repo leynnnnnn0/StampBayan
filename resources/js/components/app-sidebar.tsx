@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { AwardIcon, BookOpen, Code2Icon, IdCard, LayoutDashboard, LayoutGrid, QrCodeIcon, StampIcon, StoreIcon, TicketIcon, Users2Icon } from 'lucide-react';
+import { AwardIcon, BookOpen, Code2Icon, DatabaseBackup, IdCard, LayoutDashboard, LayoutGrid, MessageCircle, QrCodeIcon, StampIcon, StoreIcon, Users2Icon } from 'lucide-react';
 import LOGO from '../../images/mainLogo.png';
 
 const mainNavItems: NavItem[] = [
@@ -57,9 +57,15 @@ const mainNavItems: NavItem[] = [
         icon: QrCodeIcon,
     },
      {
-        title: 'Tickets',
+        title: 'Backups',
+        href: '/business/backups',
+        icon: DatabaseBackup,
+        badge: 'New',
+    },
+     {
+        title: 'Support',
         href: '/business/tickets',
-        icon: TicketIcon,
+        icon: MessageCircle,
     },
 ];
 

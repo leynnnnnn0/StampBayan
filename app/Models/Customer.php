@@ -3,20 +3,22 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\CustomerResetPasswordNotification;
 use Illuminate\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Contracts\Auth\CanResetPassword;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Contracts\Auth\CanResetPassword;
-use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Customer extends Model implements AuthenticatableContract, AuthorizableContract, CanResetPassword
 {
-    use Authenticatable, Authorizable, HasFactory, Notifiable, CanResetPasswordTrait;
+    use Authenticatable, Authorizable, CanResetPasswordTrait, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'business_id',
@@ -82,6 +84,6 @@ class Customer extends Model implements AuthenticatableContract, AuthorizableCon
 
     public function sendPasswordResetNotification($token)
     {
-        $this->notify(new \App\Notifications\CustomerResetPasswordNotification($token));
+        $this->notify(new CustomerResetPasswordNotification($token));
     }
 }

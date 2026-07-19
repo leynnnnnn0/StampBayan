@@ -3,13 +3,15 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Database\Factories\LoyaltyCardFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LoyaltyCard extends Model
 {
-    /** @use HasFactory<\Database\Factories\LoyaltyCardFactory> */
-    use HasFactory;
+    /** @use HasFactory<LoyaltyCardFactory> */
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'business_id',
@@ -35,9 +37,8 @@ class LoyaltyCard extends Model
     protected $appends = [
         'is_near_expiry_date',
         'is_expired',
-        'valid_until_formatted'
+        'valid_until_formatted',
     ];
-
 
     public function getValidUntilFormattedAttribute()
     {
@@ -46,7 +47,7 @@ class LoyaltyCard extends Model
 
     public function getIsNearExpiryDateAttribute()
     {
-        if (!$this->valid_until) {
+        if (! $this->valid_until) {
             return false;
         }
 
@@ -58,7 +59,7 @@ class LoyaltyCard extends Model
 
     public function getIsExpiredAttribute()
     {
-        if (!$this->valid_until) {
+        if (! $this->valid_until) {
             return false;
         }
 

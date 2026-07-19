@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\BusinessFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Business extends Model
 {
-    /** @use HasFactory<\Database\Factories\BusinessFactory> */
-    use HasFactory;
+    /** @use HasFactory<BusinessFactory> */
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -53,6 +55,25 @@ class Business extends Model
     public function stampCodes()
     {
         return $this->hasMany(StampCode::class);
+    }
+
+    public function backupSubscription()
+    {
+        return $this->hasOne(BackupSubscription::class);
+    }
+
+    public function backupPayments()
+    {
+        return $this->hasMany(BackupPayment::class);
+    }
+
+    public function hasActiveBackupPlan(): bool
+    {
+        $subscription = $this->relationLoaded('backupSubscription')
+            ? $this->backupSubscription
+            : $this->backupSubscription()->first();
+
+        return $subscription?->isActive() ?? false;
     }
 
     protected static function boot()

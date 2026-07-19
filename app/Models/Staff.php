@@ -2,29 +2,31 @@
 
 namespace App\Models;
 
+use Database\Factories\StaffFactory;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
-use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Auth\Authenticatable;
 
 class Staff extends Model implements AuthenticatableContract, AuthorizableContract
 {
-    /** @use HasFactory<\Database\Factories\StaffFactory> */
-    use HasFactory, Authenticatable, Authorizable, Notifiable;
+    /** @use HasFactory<StaffFactory> */
+    use Authenticatable, Authorizable, HasFactory, Notifiable, SoftDeletes;
 
-    protected $fillable = [ 
+    protected $fillable = [
         'business_id',
         'branch',
         'username',
         'password',
         'remarks',
-        'is_active'
+        'is_active',
     ];
-     protected $hidden = [
+
+    protected $hidden = [
         'password',
         'remember_token',
     ];

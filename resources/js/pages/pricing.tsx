@@ -18,7 +18,7 @@ import MainLogo from '../../../public/images/mainLogo.png';
 
 const plans = [
     {
-        name: 'Starter',
+        name: 'Premium',
         description: 'Perfect for small shops starting out.',
         price: '₱0',
         period: '/forever',
@@ -26,45 +26,13 @@ const plans = [
         cta: 'Get Started',
         href: '/register',
         badge: 'Free',
+        featured: true,
         features: [
             'Unlimited customers',
             'Unlimited stamps and rewards',
             'Full access to Customer Analytics',
             'Custom Card & QR Code Builder',
             'Dedicated Support (Email/Chat)',
-        ],
-    },
-    {
-        name: 'Pro',
-        description: 'Everything in Free, plus branding tools.',
-        price: '₱99',
-        period: '/month',
-        note: 'For growing brands',
-        cta: 'Choose Pro',
-        href: '/register',
-        featured: true,
-        features: [
-            'Custom landing page',
-            'yourbusiness.stampbayan.com',
-            'Show your logo',
-            'Priority support',
-            'Includes all Free features',
-        ],
-    },
-    {
-        name: 'Enterprise',
-        description: 'A custom business solution for larger launches.',
-        price: 'Contact us',
-        period: '',
-        note: 'No public price yet',
-        cta: 'Talk to Us',
-        href: 'mailto:stampbayan@gmail.com',
-        badge: 'Custom',
-        features: [
-            'Custom UI/UX Design',
-            'Next.js & Tailwind CSS Architecture',
-            'API Integration & Authentication',
-            '24/7 Priority Support',
         ],
     },
 ];
@@ -206,7 +174,7 @@ export default function Pricing() {
                         </p>
                     </div>
 
-                    <div className="relative mx-auto mt-24 grid max-w-7xl gap-10 lg:grid-cols-3 lg:items-start">
+                    <div className="relative mx-auto mt-24 max-w-7xl flex items-center justify-center gap-10">
                         {plans.map((plan) => (
                             <article
                                 key={plan.name}
@@ -229,7 +197,7 @@ export default function Pricing() {
                                     </span>
                                 )}
 
-                                <div className="min-h-32">
+                                <div className="min-h-fit">
                                     <h2 className="text-2xl font-bold">
                                         {plan.name}
                                     </h2>
@@ -238,7 +206,7 @@ export default function Pricing() {
                                     </p>
                                 </div>
 
-                                <div className="mt-7">
+                                <div className="">
                                     <div className="flex flex-wrap items-end gap-2">
                                         <span
                                             className={`font-semibold tracking-tight ${
