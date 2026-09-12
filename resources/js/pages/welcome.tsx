@@ -726,10 +726,12 @@ export default function Welcome() {
             return;
         }
 
-        if (auth.user) {
+        if (auth.user?.role === 'business') {
             router.visit('/business/dashboard');
             return;
         }
+
+        if (auth.user) return;
 
         setDashboardDialogOpen(true);
     };
@@ -1037,16 +1039,18 @@ export default function Welcome() {
                             cards, instant rewards, staff tools, and loyalty
                             analytics built for local businesses.
                         </p>
-                        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                            <button
-                                type="button"
-                                onClick={handleDashboardClick}
-                                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:text-primary"
-                            >
-                                <BarChart3 className="h-4 w-4 text-primary" />
-                                View Dashboard
-                            </button>
-                        </div>
+                        {auth.user?.role !== 'admin' && (
+                            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                                <button
+                                    type="button"
+                                    onClick={handleDashboardClick}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:text-primary"
+                                >
+                                    <BarChart3 className="h-4 w-4 text-primary" />
+                                    View Dashboard
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </section>
 

@@ -29,6 +29,7 @@ import {
     Gift,
     Home,
     Plus,
+    RefreshCw,
     ScanLine,
     Settings,
     ShoppingCart,
@@ -278,6 +279,7 @@ export default function Index({
     const [scanDialogOpen, setScanDialogOpen] = useState(false);
     const [offlineFeatureOpen, setOfflineFeatureOpen] = useState(false);
     const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [selectedCompletedCard, setSelectedCompletedCard] =
         useState<CompletedCard | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -365,6 +367,21 @@ export default function Index({
                 ? 'To install StampBayan: open this page in Safari, tap Share, then Add to Home Screen.'
                 : 'To install StampBayan: open your browser menu and choose Install app or Add to Home screen.',
         );
+    };
+
+    const handleRefresh = async () => {
+        if (isRefreshing) return;
+
+        setIsRefreshing(true);
+
+        try {
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.getRegistration();
+                await registration?.update();
+            }
+        } finally {
+            window.location.reload();
+        }
     };
 
     useEffect(() => {
@@ -1279,27 +1296,40 @@ export default function Index({
                 {offlineFeatureDialog}
                 <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
                     <img src={LOGO} alt="business logo" className="h-10" />
-                    <DropdownMenu>
-                        <DropdownMenuTrigger>
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100">
-                                <User className="h-5 w-5 text-gray-600" />
-                            </div>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={() => setProfileDialogOpen(true)}
-                            >
-                                Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => router.post('/customer/logout')}
-                            >
-                                Logout
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            aria-label="Refresh dashboard"
+                            title="Refresh dashboard"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger>
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100">
+                                    <User className="h-5 w-5 text-gray-600" />
+                                </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    onClick={() => setProfileDialogOpen(true)}
+                                >
+                                    Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => router.post('/customer/logout')}
+                                >
+                                    Logout
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </header>
                 <main className="px-6 py-8">
                     <p className="mt-20 text-center text-gray-500">
@@ -1341,6 +1371,16 @@ export default function Index({
                 </div>
                 <div className="flex items-center gap-3">
                     <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                    >
+                        <RefreshCw className={`mr-1 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                    <Button
                         onClick={handleRecordStamp}
                         disabled={!isOnline}
                         className="bg-primary text-white hover:bg-primary/80"
@@ -1378,21 +1418,45 @@ export default function Index({
                     <img src={LOGO} alt="logo" className="h-8 w-auto" />
                 </div>
 
-                <button
-                    onClick={handleRecordStamp}
-                    disabled={!isOnline}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary shadow-md transition-transform active:scale-95 disabled:opacity-50"
-                >
-                    <ScanLine className="h-5 w-5 text-white" />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        aria-label="Refresh dashboard"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-transform active:scale-95 disabled:opacity-50"
+                    >
+                        <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleRecordStamp}
+                        disabled={!isOnline}
+                        aria-label="Record stamp"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary shadow-md transition-transform active:scale-95 disabled:opacity-50"
+                    >
+                        <ScanLine className="h-5 w-5 text-white" />
+                    </button>
+                </div>
             </div>
 
             {!isOnline && (
-                <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-center text-xs font-medium text-amber-800 sm:text-sm">
-                    You are currently offline. Last synced{' '}
-                    {formatLastSynced(cachedSnapshot?.lastSyncedAt)}. Showing
-                    saved loyalty cards, rewards, history, and your personal
-                    QR. New stamps will appear when you come back online.
+                <div className="flex items-center justify-center gap-3 border-b border-amber-200 bg-amber-50 px-5 py-3 text-center text-xs font-medium text-amber-800 sm:text-sm">
+                    <span>
+                        You are currently offline. Last synced{' '}
+                        {formatLastSynced(cachedSnapshot?.lastSyncedAt)}. Showing
+                        saved loyalty cards, rewards, history, and your personal
+                        QR. New stamps will appear when you come back online.
+                    </span>
+                    <button
+                        type="button"
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 font-semibold text-amber-900 disabled:opacity-50"
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
                 </div>
             )}
 

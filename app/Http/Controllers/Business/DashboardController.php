@@ -14,6 +14,14 @@ class DashboardController extends Controller
     public function index()
     {
         $business = Auth::user()->business;
+
+        if (! $business) {
+            return redirect()->route('home')->with(
+                'error',
+                'This account does not have a business dashboard.',
+            );
+        }
+
         $businessId = $business->id;
         $startOfMonth = now()->startOfMonth();
         $startOfLastMonth = now()->subMonth()->startOfMonth();
