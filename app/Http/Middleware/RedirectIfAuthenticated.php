@@ -22,7 +22,9 @@ class RedirectIfAuthenticated
                 return match($guard) {
                     'customer' => redirect()->route('customer.dashboard'),
                     'staff' => redirect()->route('staff.dashboard'),
-                    default => redirect()->route('dashboard'), // business
+                    default => $request->user()?->role === 'admin'
+                        ? redirect()->route('home')
+                        : redirect()->route('dashboard'), // business
                 };
             }
         }

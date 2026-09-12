@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { AwardIcon, BookOpen, Code2Icon, DatabaseBackup, IdCard, LayoutDashboard, LayoutGrid, MessageCircle, QrCodeIcon, StampIcon, StoreIcon, Users2Icon } from 'lucide-react';
+import { AwardIcon, BookOpen, Code2Icon, IdCard, LayoutGrid, MessageCircle, QrCodeIcon, StampIcon, StoreIcon, Users2Icon } from 'lucide-react';
 import LOGO from '../../images/mainLogo.png';
 
 const mainNavItems: NavItem[] = [
@@ -57,12 +57,6 @@ const mainNavItems: NavItem[] = [
         icon: QrCodeIcon,
     },
      {
-        title: 'Backups',
-        href: '/business/backups',
-        icon: DatabaseBackup,
-        badge: 'New',
-    },
-     {
         title: 'Support',
         href: '/business/tickets',
         icon: MessageCircle,
@@ -80,16 +74,8 @@ const footerNavItems: NavItem[] = [
 export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
     const isAdmin = auth.user?.role === 'admin';
-    const navItems: NavItem[] = isAdmin
-        ? [
-              {
-                  title: 'Admin Dashboard',
-                  href: '/admin/dashboard',
-                  icon: LayoutDashboard,
-              },
-          ]
-        : mainNavItems;
-    const logoHref = isAdmin ? '/admin/dashboard' : '/business/dashboard';
+    const navItems: NavItem[] = isAdmin ? [] : mainNavItems;
+    const logoHref = isAdmin ? '/' : '/business/dashboard';
 
     return (
         <Sidebar collapsible="icon" variant="inset">

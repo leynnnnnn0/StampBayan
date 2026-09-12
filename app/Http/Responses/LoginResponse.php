@@ -9,7 +9,7 @@ class LoginResponse implements LoginResponseContract
     public function toResponse($request)
     {
         $home = $request->user()?->role === 'admin'
-            ? route('admin.dashboard')
+            ? route('home')
             : config('fortify.home');
 
         return $request->wantsJson()
