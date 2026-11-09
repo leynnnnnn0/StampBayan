@@ -12,7 +12,19 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { AwardIcon, BookOpen, Code2Icon, IdCard, LayoutGrid, MessageCircle, QrCodeIcon, StampIcon, StoreIcon, Users2Icon } from 'lucide-react';
+import {
+    AwardIcon,
+    BookOpen,
+    CircleGauge,
+    Code2Icon,
+    IdCard,
+    LayoutGrid,
+    MessageCircle,
+    QrCodeIcon,
+    StampIcon,
+    StoreIcon,
+    Users2Icon,
+} from 'lucide-react';
 import LOGO from '../../images/mainLogo.png';
 
 const mainNavItems: NavItem[] = [
@@ -21,42 +33,48 @@ const mainNavItems: NavItem[] = [
         href: '/business/dashboard',
         icon: LayoutGrid,
     },
-     {
+    {
         title: 'Staff Accounts',
         href: '/business/staffs',
         icon: StoreIcon,
     },
-      {
+    {
         title: 'Issue Stamp',
         href: '/business/issue-stamp',
         icon: StampIcon,
     },
-     {
+    {
         title: 'Perk Claims',
         href: '/business/perk-claims',
         icon: AwardIcon,
     },
-       {
+    {
         title: 'Stamp Codes',
         href: '/business/stamp-codes',
         icon: Code2Icon,
     },
-      {
+    {
         title: 'Loyalty Cards',
         href: '/business/card-templates',
         icon: IdCard,
     },
-      {
+    {
         title: 'Customers',
         href: '/business/customers',
         icon: Users2Icon,
     },
-          {
+    {
         title: 'QR Studio',
         href: '/business/qr-studio',
         icon: QrCodeIcon,
     },
-     {
+    {
+        title: 'Prize Wheel',
+        href: '/business/prize-wheel',
+        icon: CircleGauge,
+        badge: 'New',
+    },
+    {
         title: 'Support',
         href: '/business/tickets',
         icon: MessageCircle,
@@ -84,7 +102,7 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href={logoHref} prefetch>
-                                <img src={LOGO} alt="logo" className='w-full' />
+                                <img src={LOGO} alt="logo" className="w-full" />
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

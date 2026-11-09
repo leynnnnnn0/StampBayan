@@ -57,6 +57,11 @@ class Business extends Model
         return $this->hasMany(StampCode::class);
     }
 
+    public function prizeWheel()
+    {
+        return $this->hasOne(PrizeWheel::class);
+    }
+
     public function backupSubscription()
     {
         return $this->hasOne(BackupSubscription::class);

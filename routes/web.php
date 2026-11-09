@@ -6,6 +6,7 @@ use App\Http\Controllers\Business\CustomerController;
 use App\Http\Controllers\Business\DashboardController;
 use App\Http\Controllers\Business\IssueStampController;
 use App\Http\Controllers\Business\PerkClaimController;
+use App\Http\Controllers\Business\PrizeWheelController;
 use App\Http\Controllers\Business\QRStudioController;
 use App\Http\Controllers\Business\StaffController;
 use App\Http\Controllers\Business\StampCodeController;
@@ -67,6 +68,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/qr-studio', [QRStudioController::class, 'index']);
         Route::get('/qr-studio/download', [QRStudioController::class, 'download']);
         Route::post('/qr-studio/update', [QRStudioController::class, 'update']);
+        Route::get('/prize-wheel', [PrizeWheelController::class, 'index'])->name('prize-wheel.index');
+        Route::post('/prize-wheel', [PrizeWheelController::class, 'update'])->name('prize-wheel.update');
+        Route::post('/prize-wheel/feedback', [PrizeWheelController::class, 'feedback'])->name('prize-wheel.feedback');
         Route::resource('/customers', CustomerController::class);
         Route::get('/issue-stamp', [IssueStampController::class, 'index']);
         Route::post('/issue-stamp/scan-customer', [StampCodeController::class, 'recordCustomerScan']);

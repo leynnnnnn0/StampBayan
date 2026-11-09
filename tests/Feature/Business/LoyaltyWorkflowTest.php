@@ -14,6 +14,37 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
+test('customer stamp history paginates while totals include all valid stamps', function () {
+    [$user, $business] = businessUser();
+    $customer = Customer::factory()->for($business)->create();
+    $card = LoyaltyCard::factory()->for($business)->create();
+    foreach (range(1, 13) as $index) {
+        $stamp = StampCode::create([
+            'user_id' => $user->id,
+            'business_id' => $business->id,
+            'customer_id' => $customer->id,
+            'loyalty_card_id' => $card->id,
+            'code' => 'PAGINATION-'.$index,
+            'used_at' => now(),
+            'number_of_stamps' => 2,
+            'is_expired' => false,
+            'is_offline_code' => false,
+        ]);
+        if ($index === 13) {
+            $stamp->delete();
+        }
+    }
+    foreach ([1 => 10, 2 => 3] as $pageNumber => $count) {
+        $this->actingAs($user)->get(route('customers.show', ['customer' => $customer->id, 'page' => $pageNumber]))
+            ->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('Business/Customer/Show')
+            ->where('customer.total_stamps', 24)
+            ->where('stampCodes.current_page', $pageNumber)
+            ->where('stampCodes.total', 13)
+            ->has('stampCodes.data', $count));
+    }
+});
+
 function businessUser(): array
 {
     $user = User::factory()->create();
@@ -167,6 +198,15 @@ test('business users can cancel an accidentally issued stamp', function () {
 
     expect($stamp->refresh()->trashed())->toBeTrue();
     expect(PerkClaim::where('customer_id', $customer->id)->exists())->toBeFalse();
+
+    $this->actingAs($user)
+        ->get(route('customers.show', $customer))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Business/Customer/Show')
+            ->where('customer.total_stamps', 0)
+            ->where('stampCodes.data.0.id', $stamp->id)
+            ->where('stampCodes.data.0.deleted_at', fn ($deletedAt) => $deletedAt !== null));
 });
 
 test('staff users can scan a customer qr and issue selected stamps', function () {
